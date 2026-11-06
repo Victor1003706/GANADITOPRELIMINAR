@@ -38,7 +38,7 @@
   let resumen = $state<ResumenPesoLote | null>(null);
   let idempotencyKey = $state('');
 
-  function esPuntoCompleto(): puntos is PuntosAnatomicos & { punto_a: PuntoPx; punto_b: PuntoPx } {
+  function esPuntoCompleto(): boolean {
     return !!puntos.punta_hombro && !!puntos.punta_nalga && !!puntos.cruz &&
       !!puntos.pecho_inferior && !!puntos.punto_a && !!puntos.punto_b;
   }
@@ -137,10 +137,11 @@
 
     enviando = true;
     if (!idempotencyKey) idempotencyKey = crypto.randomUUID();
+    const puntosCompletos = puntos as PuntosAnatomicos & { punto_a: PuntoPx; punto_b: PuntoPx };
     const calibracion: CalibracionReferencia = {
       tipo: 'REFERENCIA',
-      punto_a: puntos.punto_a,
-      punto_b: puntos.punto_b,
+      punto_a: puntosCompletos.punto_a,
+      punto_b: puntosCompletos.punto_b,
       distancia_cm: distanciaReferencia
     };
     const payload: CrearEstimacionPesoInput = {
@@ -148,10 +149,10 @@
       vistas: [{
         imagen_base64: imagenBase64,
         puntos: {
-          punta_hombro: puntos.punta_hombro,
-          punta_nalga: puntos.punta_nalga,
-          cruz: puntos.cruz,
-          pecho_inferior: puntos.pecho_inferior
+          punta_hombro: puntosCompletos.punta_hombro,
+          punta_nalga: puntosCompletos.punta_nalga,
+          cruz: puntosCompletos.cruz,
+          pecho_inferior: puntosCompletos.pecho_inferior
         },
         calibracion
       }]
@@ -162,8 +163,7 @@
         {
           method: 'POST',
           headers: { 'Idempotency-Key': idempotencyKey },
-          body: JSON.stringify(payload),
-          expectedStatus: 201
+          body: JSON.stringify(payload)
         }
       );
       idempotencyKey = '';
