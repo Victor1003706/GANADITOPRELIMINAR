@@ -1,0 +1,23 @@
+{
+  "extends": "$app/tsconfig",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*",
+    "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/service-worker"
+  ]
+}

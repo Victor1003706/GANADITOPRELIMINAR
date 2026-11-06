@@ -1,0 +1,2 @@
+<script lang="ts">let { name }: { name: string } = $props();</script>
+<section class="page narrow"><p class="eyebrow">Etapa posterior</p><h1>{name}</h1><div class="panel"><p>Este módulo todavía no está habilitado para operar.</p><p class="muted">Las integraciones externas requieren configuración y pruebas antes de su habilitación.</p><a class="button" href="/">Volver al mercado</a></div></section>

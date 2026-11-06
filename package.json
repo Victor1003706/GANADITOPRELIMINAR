@@ -1,0 +1,37 @@
+{
+  "name": "ganadito-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ganadito \u2014 Plataforma ganadera y comercial (Monorepo modular)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "npm run --workspaces --if-present dev",
+    "dev:web": "npm run --workspace=@ganadito/web dev --",
+    "dev:api": "npm run --workspace=@ganadito/api dev",
+    "start:api": "npm run --workspace=@ganadito/api start",
+    "typecheck": "npm run --workspaces --if-present typecheck",
+    "lint": "npm run --workspaces --if-present lint",
+    "test": "npm run --workspaces --if-present test",
+    "seed": "npm run seed --workspace=@ganadito/api",
+    "build": "npm run --workspaces --if-present build",
+    "test:e2e": "playwright test --config tests/e2e/playwright.config.ts",
+    "test:e2e:http": "node tests/e2e/run-http.mjs",
+    "test:e2e:guard": "node --test tests/e2e/real/environment.test.mjs",
+    "test:e2e:real": "playwright test --config tests/e2e/real/playwright.config.ts",
+    "test:config": "node --test tests/e2e/runtime-config.test.mjs tests/e2e/real/environment.test.mjs",
+    "test:proxy": "node --test tests/e2e/proxy.test.mjs",
+    "db:migrate": "npm run migrate --workspace=@ganadito/api"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "^22.10.1",
+    "typescript": "6.0.3"
+  }
+}

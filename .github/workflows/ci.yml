@@ -1,0 +1,220 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Push, PR and manual runs of the same branch share one validation slot.
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Pruebas del satélite IA (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: services/ai-satellite/requirements.txt
+
+      - name: Instalar dependencias del satélite
+        run: python -m pip install -r services/ai-satellite/requirements.txt
+
+      - name: Pruebas de IA con imágenes y datos sintéticos
+        run: python -m pytest -q services/ai-satellite/tests
+
+  validate:
+    name: Validar Monorepo
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: ganadito
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      GANADITO_ALLOW_CURSOR_DB_TEST: isolated-ci-fixtures
+      DATABASE_URL: postgres://postgres:postgrespassword@localhost:5432/ganadito
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgrespassword
+      DATABASE_NAME: ganadito
+      REDIS_URL: redis://localhost:6379
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Instalar dependencias limpias
+        run: npm ci
+
+      - name: Guardias de configuración y destinos de pruebas
+        run: npm run test:config
+
+      - name: Verificación de tipos (Typecheck)
+        run: npm run typecheck
+
+      - name: Linteo
+        run: npm run lint
+
+      - name: Pruebas automatizadas
+        run: npm test
+
+      - name: Compilación (Build)
+        run: npm run build
+
+      - name: Proxy de la web compilada
+        run: npm run test:proxy
+
+  browser:
+    name: Navegador con fixtures explícitos
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: 'true'
+      # Respuestas ficticias interceptadas por tests/e2e; no conecta Neon ni staging.
+      PUBLIC_API_URL: ''
+      API_INTERNAL_URL: http://127.0.0.1:4000
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Instalar dependencias limpias
+        run: npm ci
+
+      - name: Instalar Chromium y dependencias del sistema
+        run: npx playwright install --with-deps chromium
+
+      - name: Pruebas del navegador aisladas
+        run: npm run test:e2e
+
+      - name: Pruebas del navegador en modo HTTP
+        run: npm run test:e2e:http
+
+      - name: Conservar evidencia del navegador
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: navegador-fixtures-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  browser-real:
+    name: Navegador y API reales en servicios efímeros
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: isolated-fixture-password
+          POSTGRES_DB: ganadito_e2e_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ganadito_e2e_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CI: 'true'
+      GANADITO_ALLOW_REAL_E2E: isolated-local-fixtures
+      GANADITO_RELEASE_SHA: ${{ github.sha }}
+      NODE_ENV: test
+      DATABASE_URL: postgres://postgres:isolated-fixture-password@127.0.0.1:5432/ganadito_e2e_test
+      REDIS_URL: redis://127.0.0.1:6379/15
+      RUN_MIGRATIONS_ON_START: 'true'
+      START_WORKERS: 'true'
+      PAYMENTS_ENABLED: 'false'
+      # Public, disposable test key. Never reuse it outside these ephemeral services.
+      JWT_SECRET: ganadito_ci_isolated_fictional_jwt_secret_2026_only
+      PUBLIC_API_URL: ''
+      API_INTERNAL_URL: http://127.0.0.1:4181
+      PUBLIC_LIVE_AUCTIONS_ENABLED: 'false'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Instalar dependencias limpias
+        run: npm ci
+
+      - name: Instalar Chromium y dependencias del sistema
+        run: npx playwright install --with-deps chromium
+
+      - name: Comprobar rechazo de destinos ajenos
+        run: npm run test:e2e:guard
+
+      - name: Flujo real web y API con cuentas ficticias
+        run: npm run test:e2e:real
+
+      # Deliberately no artifact upload: auth requests contain disposable passwords/JWTs.

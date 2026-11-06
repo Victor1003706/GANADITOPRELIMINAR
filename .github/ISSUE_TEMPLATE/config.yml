@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentación de Ganadito
+    url: https://github.com
+    about: Revisa docs/DEVELOPMENT.md y docs/ARCHITECTURE.md antes de reportar.

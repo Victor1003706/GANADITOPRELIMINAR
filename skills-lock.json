@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "skills": {
+    "context-engineering": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/context-engineering/SKILL.md",
+      "computedHash": "e02e84c9af9e5ba8b22161cc2c60517062a13bcc7d4e8763478257cae992e137"
+    },
+    "superpowers": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/"
+    }
+  }
+}
