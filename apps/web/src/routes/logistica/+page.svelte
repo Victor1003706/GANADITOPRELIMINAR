@@ -48,6 +48,7 @@
   let registrandoUnidad = $state(false);
   let errorUnidad = $state('');
   let aviso = $state('');
+  let seleccionUnidadPorFlete = $state<Record<string, string>>({});
 
   async function cargarOperaciones() {
     if ($session.status !== 'authenticated' || !$session.organizationId) {
@@ -212,7 +213,7 @@
       <div class="notice" role="status">
         <strong>Cotización de la API</strong>
         <p>Distancia: {cotizacion.distancia_km.toFixed(2)} km · peso: {cotizacion.peso_toneladas.toFixed(2)} t.</p>
-        <p>Flete bruto: S/ {cotizacion.costo_flete_bruto.toFixed(2)} · comisiones: S/ {(cotizacion.comision_referral_fee + cotizacion.comision_plataforma_fee).toFixed(2)} · total estimado: <strong>S/ {cotizacion.costo_total_pagar.toFixed(2)}</strong>.</p>
+        <p>Flete bruto: S/ {cotizacion.costo_flete_bruto.toFixed(2)} · total estimado según tarifa configurada: <strong>S/ {cotizacion.total_flete.toFixed(2)}</strong>.</p>
         <p class="muted">El cálculo no constituye una aceptación de transporte ni un pago.</p>
         <label>Tipo de carga<select bind:value={tipoCarga}>{#each tiposCarga as item (item.value)}<option value={item.value}>{item.label}</option>{/each}</select></label>
         <button type="button" disabled={creandoSolicitud} onclick={() => void crearSolicitud()}>{creandoSolicitud ? 'Registrando…' : 'Crear solicitud real de flete'}</button>
