@@ -27,7 +27,7 @@
   let imagenPreview = $state('');
   let anchoImagen = $state(0);
   let altoImagen = $state(0);
-  let imagenEl: HTMLImageElement | undefined;
+  let imagenEl = $state<HTMLImageElement | undefined>(undefined);
   let puntos = $state<Partial<PuntosAnatomicos> & { punto_a?: PuntoPx; punto_b?: PuntoPx }>({});
   let distanciaReferencia = $state<number | undefined>();
   let cargandoImagen = $state(false);
@@ -208,7 +208,7 @@
         <img bind:this={imagenEl} src={imagenPreview} alt="Foto de perfil del animal preparada para marcar medidas" class="block w-full h-auto" />
         {#each objetivos as item (item.value)}
           {#if puntos[item.value]}
-            {@const point = puntos[item.value]}
+            {@const point = puntos[item.value] ?? ([0, 0] as PuntoPx)}
             <span class="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-emerald-600 px-1.5 py-0.5 text-xs" style={`left: ${(point[0] / anchoImagen) * 100}%; top: ${(point[1] / altoImagen) * 100}%`} aria-label={item.label}>{item.label}</span>
           {/if}
         {/each}
