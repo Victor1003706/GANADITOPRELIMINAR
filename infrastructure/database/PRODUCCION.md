@@ -64,6 +64,17 @@ El release inicial contiene las migraciones `0001` a `0016`, que incluyen identi
 - Alertar por conexiones agotadas, latencia, errores de conexión y fallos de migración.
 - Mantener el identificador del release y la versión de esquema juntos para evaluar rollback de aplicación.
 
-## 6. Puerta de producción
+## 6. Estado operativo (2026-11-06)
 
-El esquema y la API pueden quedar versionados en Git, pero la base productiva solo se considera habilitada cuando el propietario confirma el proyecto de base, ambas URL seguras, roles, región/cuotas, backups y acceso de red, y una migración aplicada y verificada. Sin esos recursos no hay conexión de producción ni se deben usar datos reales.
+La instancia Neon del piloto está preparada en el proyecto `my-first-project`, rama `production`, base `neondb`.
+
+- Se aplicaron las migraciones `0001` a `0016) desde este release; `schema_migrations` registra 16 nombres y checksums.
+- Se verificaron 25 tablas del modelo, las extensiones `pgcrypto` y `postgis`, el índice espacial GiST y un cálculo de distancia.
+- Las tablas previas de `public` se conservaron. El esquema adicional `ganadito` de la rama `ganadito-preview` es de otra versión y no sustituye al modelo canónico `public` de este monorepo.
+- El servicio API de Vercel tiene `DATABASE_URL) configurada como secreto con el rol limitado `ganadito_runtime`. La API activa allí aún apunta al repositorio `Victor1003706/GANADITO`; no se debe asumir que el merge de este PR despliega `GANADITOPRELIMINAR`.
+
+Antes de abrir la prueba piloto con este release, enlazar el servicio de despliegue con el repositorio y commit correctos, configurar su secreto de migración en un job aislado y verificar el endpoint de disponibilidad de base de datos. Confirmar también backups y restauración en el proveedor.
+
+## 7. Puerta para el piloto
+
+La base de producción ya tiene el esquema aplicado. La prueba piloto queda completa cuando el despliegue de este release usa la base y versión correctas, las credenciales de migración siguen separadas de la API, los backups están confirmados y el recorrido de usuario pasa sin errores.
