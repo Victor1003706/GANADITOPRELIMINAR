@@ -1,0 +1,38 @@
+{
+  "name": "@ganadito/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Frontend web de Ganadito (SvelteKit + TypeScript)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "preview": "vite preview --host 127.0.0.1",
+    "start": "node build/index.js",
+    "test": "node --test src/lib/auctions/*.test.mjs"
+  },
+  "dependencies": {
+    "@ganadito/contracts": "*",
+    "@ganadito/shared": "*",
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-auto": "^8.0.0",
+    "@sveltejs/adapter-node": "6.0.1",
+    "@sveltejs/kit": "^3.1.1",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/leaflet": "^1.9.22",
+    "autoprefixer": "^10.6.2",
+    "postcss": "^8.5.32",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.7",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.5"
+  },
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  }
+}

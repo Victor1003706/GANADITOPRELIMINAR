@@ -1,0 +1,11 @@
+# Plantilla sin secretos; cargar valores reales en el gestor de variables del host.
+NODE_ENV=production
+DATABASE_URL=postgresql://ganadito_runtime:REEMPLAZAR@HOST_PRODUCCION/ganadito?sslmode=require
+DATABASE_POOL_MAX=8
+# DATABASE_MIGRATION_URL solo en job de migración, jamás en el proceso de API.
+# DATABASE_MIGRATION_URL=postgresql://ganadito_migrator:REEMPLAZAR@HOST_PRODUCCION/ganadito?sslmode=require
+RUN_MIGRATIONS_ON_START=false
+START_WORKERS=true
+API_HOST=0.0.0.0
+API_PORT=4000
+# También se requieren los secretos de autenticación y Redis, gestionados por el host.

@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #e2e8f0; background: #0f172a; color-scheme: dark; }
+body { margin: 0; }
+* { box-sizing: border-box; }
+a { color: #5eead4; text-underline-offset: 3px; }
+button, .button { display: inline-flex; justify-content: center; align-items: center; gap: .4rem; border: 1px solid #10b981; background: #047857; color: #fff; border-radius: .65rem; padding: .65rem 1rem; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
+button.secondary { background: #1e293b; border-color: #475569; color: #e2e8f0; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+input, select, textarea { width: 100%; padding: .65rem .8rem; background: #0f172a; border: 1px solid #64748b; border-radius: .5rem; color: #f8fafc; font: inherit; }
+label { display: grid; gap: .4rem; font-weight: 500; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #5eead4; outline-offset: 3px; }
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.site-header { padding: 1rem 3%; border-bottom: 1px solid #334155; background: #020617; display: flex; align-items: center; flex-wrap: wrap; gap: 1.5rem; }
+.brand { display: flex; align-items: center; gap: .7rem; text-decoration: none; color: #f8fafc; font-weight: 800; letter-spacing: .05em; }
+.brand-mark { display: grid; place-content: center; background: #047857; width: 2.6rem; height: 2.6rem; border-radius: .8rem; }
+.brand small, .session-nav small { display: block; color: #94a3b8; font-size: .75rem; font-weight: 400; letter-spacing: 0; }
+.site-header nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+.site-header nav a { color: #cbd5e1; text-decoration: none; }
+.session-nav { margin-left: auto; display: flex; align-items: center; gap: .8rem; font-size: .85rem; }
+main { flex: 1; }
+.page { width: min(100% - 2rem, 1200px); margin: 2.5rem auto; }
+.narrow { max-width: 620px; }
+h1 { font-size: clamp(1.8rem, 3vw, 2.7rem); line-height: 1.2; margin: .5rem 0 1rem; font-weight: 750; }
+h2 { font-size: 1.25rem; margin: 1rem 0; font-weight: 650; }
+h3 { font-weight: 650; }
+.eyebrow { color: #5eead4; text-transform: uppercase; font-size: .75rem; font-weight: 700; letter-spacing: .12em; }
+.muted { color: #94a3b8; }
+.panel { border: 1px solid #334155; background: #111e32; border-radius: 1rem; padding: 1.4rem; margin: 1rem 0; }
+.form-grid { display: grid; gap: 1.1rem; }
+.context-card { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: 0; flex-wrap: wrap; }
+.notice { padding: 1rem; border: 1px solid #64748b; border-radius: .6rem; background: #1e293b; margin: 1rem; }
+.error { padding: .8rem; border: 1px solid #fb7185; border-radius: .6rem; background: #4c1525; color: #fecdd3; }
+.badge { color: #6ee7b7; background: #064e3b; border: 1px solid #059669; border-radius: 999px; padding: .25rem .7rem; font-size: .8rem; }
+.site-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; padding: 1.5rem 3%; color: #94a3b8; border-top: 1px solid #334155; font-size: .8rem; }
+.skip-link { position: absolute; top: -100px; left: 1rem; padding: .8rem; background: #020617; z-index: 9999; }
+.skip-link:focus { top: .5rem; }
+@media (max-width: 700px) { .site-header { gap: .9rem; } .site-header nav { order: 3; width: 100%; font-size: .85rem; } .session-nav { flex-wrap: wrap; max-width: 58%; } .page { margin-top: 1.5rem; } }
+
+/* Leaflet map styles */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  font-family: inherit;
+}
+
+/* Custom map marker pulse animation */
+@keyframes marker-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.marker-highlight {
+  animation: marker-pulse 2s infinite;
+}

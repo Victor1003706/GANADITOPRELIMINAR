@@ -1,0 +1,27 @@
+name: Propuesta de Funcionalidad (Feature Request)
+description: Propón una nueva idea o requerimiento funcional para Ganadito.
+title: "feat: [descripción breve de la propuesta]"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Describe la necesidad del negocio ganadero y el valor aportado.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema o necesidad que atiende
+      description: ¿Qué situación actual de los usuarios o del negocio resuelve esta propuesta?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solución propuesta
+      description: Explica cómo visualizas el comportamiento o diseño de la solución.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: ¿Qué otras soluciones se evaluaron y por qué no se eligieron?

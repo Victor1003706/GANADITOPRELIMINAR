@@ -1,0 +1,72 @@
+# Dependencias
+node_modules/
+**/node_modules/
+
+# Builds y artefactos de compilación
+.svelte-kit/
+.output/
+build/
+dist/
+*.tsbuildinfo
+
+# Cobertura y reportes de pruebas
+coverage/
+playwright-report/
+test-results/
+.nyc_output/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Variables de entorno y secretos (NUNCA SUBIR)
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+
+# Editores e IDEs
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+
+# Bases de datos y volcados locales
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.backup
+*.bak
+
+# Temporales
+tmp/
+temp/
+
+# Locales de herramientas y pruebas
+.claude/settings.local.json
+test-results/
+playwright-report/
