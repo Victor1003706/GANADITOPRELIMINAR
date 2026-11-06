@@ -28,7 +28,7 @@ services:
       - key: START_WORKERS
         value: "true"
       - key: PAYMENTS_ENABLED
-        value: false
+        value: "false"
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
