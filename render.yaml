@@ -22,11 +22,11 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
+        value: "10000"
       - key: RUN_MIGRATIONS_ON_START
-        value: false
+        value: "false"
       - key: START_WORKERS
-        value: true
+        value: "true"
       - key: PAYMENTS_ENABLED
         value: false
       - key: DATABASE_URL
