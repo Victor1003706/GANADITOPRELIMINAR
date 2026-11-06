@@ -6,6 +6,7 @@ services:
     plan: free
     region: oregon
     maxmemoryPolicy: noeviction
+    ipAllowList: []
 
   - type: web
     name: ganadito-api-free
