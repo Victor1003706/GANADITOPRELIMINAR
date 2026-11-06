@@ -1,7 +1,7 @@
 # Despliegue piloto de la API en Vercel
 
-El proyecto raíz se despliega como una función HTTP bajo `/api/*`. La ruta `/health`
-se reescribe a `/api/health`. El adaptador envía el flujo HTTP directamente a Fastify,
+El proyecto raíz se despliega como una función HTTP bajo `/api/*`. La ruta de salud queda
+disponible en `/api/health`. El adaptador envía el flujo HTTP directamente a Fastify,
 sin levantar el servidor de larga duración ni los workers de `src/server.ts`.
 
 ## Configuración del proyecto
