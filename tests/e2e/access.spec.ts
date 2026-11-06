@@ -134,12 +134,12 @@ test('cambiar de contexto cancela el vencimiento del token anterior durante la v
 test('módulos operativos usan solo la API interna y conservan límites de integración', async ({ page }) => {
   const requests: string[] = [];
   const externalRequests: string[] = [];
-  const origin = new URL('http://127.0.0.1');
+  let appOrigin = '';
   page.on('request', request => {
     const url = new URL(request.url());
     if (url.pathname.startsWith('/api/v1/')) {
       requests.push(url.pathname);
-      if (url.origin !== origin.origin) externalRequests.push(url.href);
+      if (appOrigin && url.origin !== appOrigin) externalRequests.push(url.href);
     }
   });
   await page.route('**/api/v1/gmx/orderbook**', route => route.fulfill({
@@ -150,6 +150,7 @@ test('módulos operativos usan solo la API interna y conservan límites de integ
   await page.goto('/ia');
   await expect(page.getByRole('heading', { name: 'Estimación de peso vivo' })).toBeVisible();
   await expect(page.getByText(/orientativo/i).first()).toBeVisible();
+  appOrigin = new URL(page.url()).origin;
 
   await page.goto('/tributario');
   await expect(page.getByText('Este módulo todavía no está habilitado para operar.')).toBeVisible();
