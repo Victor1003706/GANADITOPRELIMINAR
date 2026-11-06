@@ -48,7 +48,7 @@ function envFlag(name: string): boolean | undefined {
  * PostgreSQL, 3) aplica migraciones si corresponde, 4) levanta workers y escucha.
  */
 export async function startServer(options: StartServerOptions = {}): Promise<ServerHandle> {
-  const port = options.port ?? Number(process.env.API_PORT ?? 4000);
+  const port = options.port ?? Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
   const host = options.host ?? process.env.API_HOST ?? '0.0.0.0';
   const shouldMigrate =
     options.runMigrations ?? envFlag('RUN_MIGRATIONS_ON_START') ?? process.env.NODE_ENV !== 'production';

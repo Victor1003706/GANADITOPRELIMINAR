@@ -208,6 +208,9 @@ jobs:
       - name: Instalar dependencias limpias
         run: npm ci
 
+      - name: Compilar paquetes compartidos para la API real aislada
+        run: npm run build:packages
+
       - name: Instalar Chromium y dependencias del sistema
         run: npx playwright install --with-deps chromium
 
