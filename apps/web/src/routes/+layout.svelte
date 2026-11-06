@@ -12,7 +12,7 @@
   <header class="site-header">
     <a class="brand" href="/"><span class="brand-mark">G</span><span>GANADITO<small>Mercado ganadero</small></span></a>
     <nav aria-label="Navegación principal">
-      <a href="/">Mapa y Spot</a><a href="/distribuidores">Distribuidores</a><a href="/demostracion">Demo MVP</a><a href="/subastas">Subastas</a><a href="/ordenes">Órdenes</a><a href="/trazabilidad">Trazabilidad</a>
+      <a href="/">Mapa y Spot</a><a href="/distribuidores">Distribuidores</a><a href="/demostracion">Demo MVP</a><a href="/subastas">Subastas</a><a href="/ordenes">Órdenes</a><a href="/trazabilidad">Trazabilidad</a><a href="/mayorista">Mayoristas</a><a href="/gmx">GMX</a><a href="/logistica">Logística</a><a href="/ia">Peso por IA</a>
     </nav>
     <div class="session-nav">
       {#if $session.status === 'authenticated'}

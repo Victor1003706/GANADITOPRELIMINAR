@@ -131,14 +131,42 @@ test('cambiar de contexto cancela el vencimiento del token anterior durante la v
   await expect(page.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
 });
 
-test('módulos posteriores no ejecutan simulaciones ni solicitudes externas', async ({ page }) => {
+test('módulos operativos usan solo la API interna y conservan límites de integración', async ({ page }) => {
   const requests: string[] = [];
-  page.on('request', request => { if (request.url().includes('/api/v1/')) requests.push(request.url()); });
-  for (const path of ['/ia', '/tributario', '/logistica', '/gmx', '/mayorista']) {
-    await page.goto(path);
-    await expect(page.getByText('Este módulo todavía no está habilitado para operar.')).toBeVisible();
-  }
-  expect(requests).toEqual([]);
+  const externalRequests: string[] = [];
+  let appOrigin = '';
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname.startsWith('/api/v1/')) {
+      requests.push(url.pathname);
+      if (appOrigin && url.origin !== appOrigin) externalRequests.push(url.href);
+    }
+  });
+  await page.route('**/api/v1/gmx/orderbook**', route => route.fulfill({
+    json: { producto: 'MEDIA_CANAL', compras: [], ventas: [], spread_pen: null, timestamp: new Date().toISOString() }
+  }));
+  await page.route('**/api/v1/mayorista/pools**', route => route.fulfill({ json: [] }));
+
+  await page.goto('/ia');
+  await expect(page.getByRole('heading', { name: 'Estimación de peso vivo' })).toBeVisible();
+  await expect(page.getByText(/orientativo/i).first()).toBeVisible();
+  appOrigin = new URL(page.url()).origin;
+
+  await page.goto('/tributario');
+  await expect(page.getByText('Este módulo todavía no está habilitado para operar.')).toBeVisible();
+
+  await page.goto('/logistica');
+  await expect(page.getByRole('heading', { name: 'Logística y fletes' })).toBeVisible();
+
+  await page.goto('/gmx');
+  await expect(page.getByRole('heading', { name: 'Bolsa cárnica GMX' })).toBeVisible();
+
+  await page.goto('/mayorista');
+  await expect(page.getByRole('heading', { name: 'Compras mayoristas' })).toBeVisible();
+
+  expect(requests).toContain('/api/v1/gmx/orderbook');
+  expect(requests).toContain('/api/v1/mayorista/pools');
+  expect(externalRequests).toEqual([]);
 });
 
 test('navegación móvil permite acceder a las pantallas principales', async ({ page }) => {
