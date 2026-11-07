@@ -27,6 +27,23 @@ El recorrido principal funciona de punta a punta, con la API y PostgreSQL reales
 
 La aceptación del flujo V01–V06 está en [docs/ACTA_ACEPTACION_V01_V06.md](docs/ACTA_ACEPTACION_V01_V06.md), con la excepción E1: **no se despliega fuera de la CI** hasta tener un staging con una recuperación probada.
 
+## Demo de presentación local (sin Vercel)
+
+La ruta `/demostracion` ofrece un recorrido visual autónomo para presentar Ganadito. No llama a la API, PostgreSQL, Redis, Neon ni a servicios de mapas externos. Usa datos de muestra guardados únicamente en el navegador; publicaciones, pujas, compras y pasos de traslado son interacciones ilustrativas y no generan operaciones reales. Los pagos permanecen desactivados.
+
+1. Instala Node.js 24 y npm 10 o superior.
+2. En Visual Studio Code, abre la carpeta raíz de este repositorio. En PowerShell de Windows, instala dependencias con `npm.cmd ci`; en macOS/Linux, usa `npm ci`.
+3. Inicia la demo con `npm.cmd run demo` en PowerShell de Windows o `npm run demo` en macOS/Linux.
+4. Abre `http://localhost:3000` (la página inicial te lleva al recorrido de presentación). En Codespaces, abre el puerto 3000 desde la pestaña **Puertos**.
+
+El comando activa `PUBLIC_DEMO_ENABLED` solo para ese proceso. La ruta se oculta cuando la variable está desactivada. Para volver a la web conectada, usa el flujo local documentado abajo y deja `PUBLIC_DEMO_ENABLED=false`.
+
+### Preparar publicación estática en Cloudflare Pages
+
+El build preparado para Cloudflare usa el modo `cloudflare-demo`, limpia la salida de Node y genera un fallback de SPA en `apps/web/build`. No despliega funciones de servidor ni usa API, base de datos, almacenamiento externo o pagos. Los archivos con hash se almacenan en caché por un año y Cloudflare comprime los recursos compatibles al servirlos; el paquete no duplica archivos `.gz`/`.br`.
+
+Antes de enlazar Cloudflare, valida el paquete localmente con `npm.cmd run build:demo:cloudflare` en PowerShell de Windows o `npm run build:demo:cloudflare` en macOS/Linux. En Pages configura **Build command** `npm run build:demo:cloudflare` y **Build output directory** `apps/web/build`. Para gastar el mínimo de compilaciones, selecciona `codex/ganadito-investor-demo` como rama de producción y haz el primer despliegue cuando el build local esté verificado. Las solicitudes de archivos estáticos no consumen cuota de Functions; Cloudflare documenta hasta 500 builds mensuales en el plan Free.
+
 ## Levantar el MVP en local
 
 Requisitos: Node según [.nvmrc](.nvmrc), Docker (para PostgreSQL y Redis) y, opcionalmente, Python 3.12 para la IA.

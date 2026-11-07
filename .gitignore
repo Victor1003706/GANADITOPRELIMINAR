@@ -23,6 +23,7 @@ test-results/
 .env.*
 !.env.example
 !.env.template
+!.env.cloudflare-demo
 
 # Logs
 *.log

@@ -13,6 +13,7 @@
   },
   "scripts": {
     "dev": "npm run --workspaces --if-present dev",
+    "demo": "node scripts/run-demo.mjs",
     "dev:web": "npm run --workspace=@ganadito/web dev --",
     "dev:api": "npm run --workspace=@ganadito/api dev",
     "start:api": "npm run --workspace=@ganadito/api start",
@@ -21,6 +22,7 @@
     "test": "npm run --workspaces --if-present test",
     "seed": "npm run seed --workspace=@ganadito/api",
     "build": "npm run --workspaces --if-present build",
+    "build:demo:cloudflare": "node scripts/build-cloudflare-demo.mjs",
     "test:e2e": "playwright test --config tests/e2e/playwright.config.ts",
     "test:e2e:http": "node tests/e2e/run-http.mjs",
     "test:e2e:guard": "node --test tests/e2e/real/environment.test.mjs",
