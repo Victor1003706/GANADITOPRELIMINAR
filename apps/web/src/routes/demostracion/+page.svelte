@@ -61,7 +61,7 @@
 
 <svelte:head><title>Demo MVP Ganadito | Simulación</title><meta name="description" content="Demostración local del marketplace ganadero de Ganadito." /></svelte:head>
 <div class="demo-shell min-h-screen bg-[#f7f5f0] text-slate-800">
-  <header class="demo-status-bar"><span><strong>GANADITO</strong><span class="demo-status-context">Vista de presentación · Marketplace ganadero</span></span><span class="demo-badge">MODO DEMOSTRACIÓN · DATOS DE EJEMPLO</span></header>
+  <header class="demo-status-bar"><span class="demo-status-context">Vista de presentación · Marketplace ganadero</span><span class="demo-badge">MODO DEMOSTRACIÓN · DATOS DE EJEMPLO</span></header>
   <nav class="sticky top-0 z-20 border-b border-stone-200 bg-[#fbfaf7]/95 px-3 py-3 backdrop-blur" aria-label="Secciones de la demostración"><div class="mx-auto flex max-w-7xl gap-2 overflow-x-auto">{#each sections as section (section.id)}<button type="button" onclick={()=>go(section.id)} aria-current={active===section.id?'page':undefined} class="shrink-0 rounded-full border px-4 py-2 text-sm font-semibold {active===section.id?'border-emerald-700 bg-emerald-700 text-white':'border-stone-300 bg-white text-slate-800 hover:border-emerald-500'}"><span aria-hidden="true">{section.icon}</span> {section.label}{section.id==='subastas'? ' · NUEVO':''}</button>{/each}</div></nav>
   <main class="mx-auto max-w-7xl px-4 py-6 sm:px-8">
     {#if notice}<div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950" role="status">{notice}</div>{/if}

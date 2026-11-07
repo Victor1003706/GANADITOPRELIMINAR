@@ -1,6 +1,7 @@
 <script lang="ts">
   import '../app.css';
   import { onMount } from 'svelte';
+  import { page } from '$app/state';
   import { restoreSession, signOut } from '#lib/auth.ts';
   import { session } from '#lib/session.ts';
   let { children }: { children?: import('svelte').Snippet } = $props();
@@ -11,9 +12,11 @@
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   <header class="site-header">
     <a class="brand" href="/"><span class="brand-mark">G</span><span>GANADITO<small>Mercado ganadero</small></span></a>
-    <nav aria-label="Navegación principal">
-      <a href="/">Mapa y Spot</a><a href="/distribuidores">Distribuidores</a><a href="/demostracion">Demo MVP</a><a href="/subastas">Subastas</a><a href="/ordenes">Órdenes</a><a href="/trazabilidad">Trazabilidad</a>
-    </nav>
+    {#if page.url.pathname !== '/demostracion'}
+      <nav aria-label="Navegación principal">
+        <a href="/">Mapa y Spot</a><a href="/distribuidores">Distribuidores</a><a href="/demostracion">Demo MVP</a><a href="/subastas">Subastas</a><a href="/ordenes">Órdenes</a><a href="/trazabilidad">Trazabilidad</a>
+      </nav>
+    {/if}
     <div class="session-nav">
       {#if $session.status === 'authenticated'}
         <a href="/contexto">{$session.context?.razon_social || 'Seleccionar organización'}<small>{$session.role || 'Sin contexto activo'}</small></a>
