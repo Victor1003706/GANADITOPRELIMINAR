@@ -88,4 +88,74 @@ CREATE INDEX IF NOT EXISTS idx_cotizaciones_spot_search ON cotizaciones_spot(pro
 -- 4. MOTOR DE SUBASTAS E INTEGRIDAD TRANSACCIONAL
 
 -- Tabla de Lotes en Subasta (PostgreSQL como única autoridad transaccional)
-CREATE TABLE IF NOT EXISTS
+CREATE TABLE IF NOT EXISTS lotes_subasta (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  codigo_lote VARCHAR(50) NOT NULL UNIQUE,
+  vendedor_id UUID NOT NULL REFERENCES organizaciones(id) ON DELETE RESTRICT,
+  estado VARCHAR(50) NOT NULL DEFAULT 'BORRADOR',
+  precio_base NUMERIC(14, 2) NOT NULL,
+  precio_actual NUMERIC(14, 2) NOT NULL,
+  incremento_minimo NUMERIC(12, 2) NOT NULL,
+  postor_ganador_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  fecha_inicio TIMESTAMPTZ NOT NULL,
+  fecha_cierre TIMESTAMPTZ NOT NULL,
+  anti_sniping_seconds INT NOT NULL DEFAULT 60,
+  anti_sniping_extension INT NOT NULL DEFAULT 120,
+  version INT NOT NULL DEFAULT 1,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_lotes_subasta_estado ON lotes_subasta(estado);
+CREATE INDEX IF NOT EXISTS idx_lotes_subasta_cierre ON lotes_subasta(fecha_cierre) WHERE estado = 'ACTIVO';
+
+-- Tabla de Pujas Registradas (Secuencia monótona e idempotencia)
+CREATE TABLE IF NOT EXISTS subasta_pujas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lote_id UUID NOT NULL REFERENCES lotes_subasta(id) ON DELETE CASCADE,
+  postor_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  monto NUMERIC(14, 2) NOT NULL,
+  secuencia INT NOT NULL,
+  idempotency_key VARCHAR(100) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_lote_secuencia UNIQUE (lote_id, secuencia),
+  CONSTRAINT uq_lote_idempotency UNIQUE (lote_id, idempotency_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_subasta_pujas_lote ON subasta_pujas(lote_id, secuencia DESC);
+
+-- 5. RESILIENCIA, IDEMPOTENCIA Y PATRÓN TRANSACTIONAL OUTBOX
+
+-- Tabla de Registro de Idempotencia de operaciones críticas
+CREATE TABLE IF NOT EXISTS idempotency_records (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  operation VARCHAR(100) NOT NULL,
+  key VARCHAR(255) NOT NULL,
+  payload_hash CHAR(64) NOT NULL,
+  status VARCHAR(50) NOT NULL,
+  response_code INT,
+  response_body JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, operation, key)
+);
+
+-- Tabla de Eventos Outbox (Garantía de entrega At-Least-Once y desacoplamiento con colas/WebSockets)
+CREATE TABLE IF NOT EXISTS outbox_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  aggregate_type VARCHAR(100) NOT NULL,
+  aggregate_id VARCHAR(100) NOT NULL,
+  event_type VARCHAR(100) NOT NULL,
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  status VARCHAR(50) NOT NULL DEFAULT 'PENDIENTE' CHECK (status IN ('PENDIENTE', 'PROCESANDO', 'PROCESADO', 'DLQ')),
+  retry_count INT NOT NULL DEFAULT 0,
+  max_retries INT NOT NULL DEFAULT 5,
+  next_retry_at TIMESTAMPTZ,
+  lease_worker_id VARCHAR(100),
+  lease_expires_at TIMESTAMPTZ,
+  fencing_token INT NOT NULL DEFAULT 0,
+  last_error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_outbox_events_polling ON outbox_events(status, next_retry_at) WHERE status IN ('PENDIENTE', 'PROCESANDO');

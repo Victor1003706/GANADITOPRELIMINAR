@@ -90,4 +90,78 @@ git check-ignore -q .worktrees 2>/dev/null || git check-ignore -q worktrees 2>/d
 #### Create the Worktree
 
 ```bash
-# Determine
+# Determine path based on chosen location
+path="$LOCATION/$BRANCH_NAME"
+
+git worktree add "$path" -b "$BRANCH_NAME"
+cd "$path"
+```
+
+**Sandbox fallback:** If `git worktree add` fails with a permission error (sandbox denial), tell the user the sandbox blocked worktree creation and you're working in the current directory instead. Then run setup and baseline tests in place.
+
+## Step 2: Project Setup
+
+Auto-detect and run appropriate setup:
+
+```bash
+# Node.js
+if [ -f package.json ]; then npm install; fi
+
+# Rust
+if [ -f Cargo.toml ]; then cargo build; fi
+
+# Python
+if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+if [ -f pyproject.toml ]; then poetry install; fi
+
+# Go
+if [ -f go.mod ]; then go mod download; fi
+```
+
+## Step 3: Verify Clean Baseline
+
+Run tests to ensure workspace starts clean:
+
+```bash
+# Use project-appropriate command
+npm test / cargo test / pytest / go test ./...
+```
+
+**If tests fail:** Report failures, ask whether to proceed or investigate.
+
+**If tests pass:** Report ready.
+
+### Report
+
+```
+Worktree ready at <full-path>
+Tests passing (<N> tests, 0 failures)
+Ready to implement <feature-name>
+```
+
+## Quick Reference
+
+| Situation | Action |
+|-----------|--------|
+| Already in linked worktree | Skip creation (Step 0) |
+| In a submodule | Treat as normal repo (Step 0 guard) |
+| Native worktree tool available | Use it (Step 1a) |
+| No native tool | Git worktree fallback (Step 1b) |
+| `.worktrees/` exists | Use it (verify ignored) |
+| `worktrees/` exists | Use it (verify ignored) |
+| Both exist | Use `.worktrees/` |
+| Neither exists | Check instruction file, then default `.worktrees/` |
+| Directory not ignored | Add to .gitignore + commit |
+| Permission error on create | Sandbox fallback, work in place |
+| Tests fail during baseline | Report failures + ask |
+| No package.json/Cargo.toml | Skip dependency install |
+
+## Common Rationalizations
+
+| Excuse | Reality |
+|--------|---------|
+| "I'm obviously not in a worktree — no need to check" | Run Step 0. Harness-created isolation and submodules both fool eyeballing; the detection commands settle it. |
+| "`git worktree add` is quicker than hunting for a native tool" | A native tool (e.g. `EnterWorktree`) owns placement, branching, and cleanup. Bypassing it is the #1 mistake — it creates phantom state your harness can't see or manage. |
+| "The worktree directory is surely ignored already" | Run `git check-ignore`. An unignored worktree directory commits the whole tree into the repo. |
+| "Any directory name works" | Explicit instructions beat an existing project-local directory, which beats the `.worktrees/` default. |
+| "The workspace is fresh — baseline tests can wait" | A dirty baseline makes every later failure ambiguous. Run the tests now; proceeding past failures is your human partner's call. |

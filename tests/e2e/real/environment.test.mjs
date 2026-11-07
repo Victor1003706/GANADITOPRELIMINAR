@@ -67,4 +67,45 @@ for (const [name, override] of rejected) {
 
 test('el launcher rechaza antes de importar el backend o cargar variables .env', () => {
   const result = spawnSync(process.execPath, [fileURLToPath(new URL('./server.mjs', import.meta.url))], {
-    env: { ...process.env, ...isol
+    env: { ...process.env, ...isolated(), GANADITO_ALLOW_REAL_E2E: '' },
+    encoding: 'utf8', timeout: 5_000
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /real E2E/i);
+  assert.doesNotMatch(result.stderr, /ERR_UNKNOWN_FILE_EXTENSION|ERR_MODULE_NOT_FOUND|fictional|postgres:\/\//);
+});
+
+test('la web compilada exige un SHA completo sin divulgar otros valores de entorno', () => {
+  for (const release of [undefined, 'development', 'abc123', `${'a'.repeat(40)}\n`]) {
+    assert.throws(() => isolatedWebEnvironment({ ...isolated(), GANADITO_RELEASE_SHA: release }), error => {
+      assert.match(error.message, /SHA/i);
+      assert.doesNotMatch(error.message, /fictional|postgres:\/\//);
+      return true;
+    });
+  }
+});
+
+test('el proceso web recibe solo configuración pública y su upstream de loopback', () => {
+  const env = isolatedWebEnvironment({
+    ...isolated(), GANADITO_RELEASE_SHA: 'a'.repeat(40), PATH: 'fixture-toolchain',
+    JWT_SECRET: 'must-not-pass', PUBLIC_OTHER_SECRET: 'must-not-pass',
+    API_INTERNAL_URL: 'https://must-not-pass.example.test', PUBLIC_API_URL: 'https://must-not-pass.example.test',
+    PUBLIC_LIVE_AUCTIONS_ENABLED: 'true', NODE_OPTIONS: '--require must-not-pass'
+  });
+  assert.deepEqual(env, {
+    PATH: 'fixture-toolchain', NODE_ENV: 'production', GANADITO_RELEASE_SHA: 'a'.repeat(40),
+    HOST: '127.0.0.1', PORT: '4180', ORIGIN: 'http://127.0.0.1:4180',
+    API_INTERNAL_URL: 'http://127.0.0.1:4181', PUBLIC_API_URL: '', PUBLIC_WS_URL: '',
+    PUBLIC_LIVE_AUCTIONS_ENABLED: 'false'
+  });
+});
+
+test('el launcher web rechaza antes de importar Vite o construir el artefacto', () => {
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL('./web.mjs', import.meta.url)), '--build-only'], {
+    env: { ...process.env, ...isolated(), GANADITO_ALLOW_REAL_E2E: '' },
+    encoding: 'utf8', timeout: 5_000
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /real E2E/i);
+  assert.doesNotMatch(result.stderr, /ERR_UNKNOWN_FILE_EXTENSION|ERR_MODULE_NOT_FOUND|fictional|postgres:\/\//);
+});

@@ -66,4 +66,31 @@ export function esPasaporte(value: unknown, id: string, organizacionId: string |
 export function esVerificacion(value: unknown): value is VerificacionCadenaResponse {
   return esObjeto(value) && typeof value.integro === 'boolean' && typeof value.total_eventos === 'number' && Number.isInteger(value.total_eventos) && value.total_eventos >= 0 &&
     (value.secuencia_corrupta === undefined || (typeof value.secuencia_corrupta === 'number' && Number.isInteger(value.secuencia_corrupta))) &&
- 
+    (value.detalle === undefined || typeof value.detalle === 'string');
+}
+
+
+const ruta = (id: string, recurso: 'pasaporte' | 'verificar') =>
+  '/api/v1/trazabilidad/bovinos/' + encodeURIComponent(id) + '/' + recurso;
+
+/**
+ * Consulta el pasaporte. `anonimo` = sin token (QR público): la API devuelve siempre
+ * la vista PUBLICA. Con sesión, la COMPLETA solo llega a la organización dueña.
+ */
+export async function consultarPasaporte(
+  id: string,
+  opciones: { anonimo: boolean; organizacionId: string | null; signal?: AbortSignal }
+): Promise<PasaporteLectura> {
+  const data = await apiRequest<unknown>(ruta(id, 'pasaporte'), { signal: opciones.signal, auth: !opciones.anonimo });
+  if (!esPasaporte(data, id, opciones.anonimo ? null : opciones.organizacionId)) {
+    throw new Error('La API no devolvió un pasaporte válido para el bovino solicitado.');
+  }
+  return data;
+}
+
+/** La integridad se recalcula en el servidor; el navegador nunca rehace hashes. */
+export async function verificarPasaporte(id: string, opciones: { anonimo: boolean; signal?: AbortSignal }): Promise<VerificacionCadenaResponse> {
+  const data = await apiRequest<unknown>(ruta(id, 'verificar'), { signal: opciones.signal, auth: !opciones.anonimo });
+  if (!esVerificacion(data)) throw new Error('La API no devolvió una verificación válida.');
+  return data;
+}

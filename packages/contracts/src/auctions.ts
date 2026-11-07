@@ -160,4 +160,32 @@ export interface PujaConfirmadaEvent {
 /** Qué se vende en un lote (todos opcionales). La puja es por el PRECIO TOTAL del lote. */
 export interface DetalleLote {
   cantidad_animales: number | null;
-  categoria: string | nul
+  categoria: string | null;
+  raza: string | null;
+  descripcion: string | null;
+  establecimiento_id: string | null;
+}
+
+/** Fila del catálogo GET /api/v1/subastas (ver docs/api/contrato-v1-acceso-lotes.md). */
+export interface LoteCatalogo extends DetalleLote {
+  id: string;
+  codigo_lote: string;
+  estado: EstadoLote;
+  precio_base: number;
+  precio_actual: number;
+  incremento_minimo: number;
+  fecha_inicio: string;
+  fecha_cierre: string;
+  es_abierta: boolean;
+  total_pujas: number;
+  /** Origen público: posición aproximada (rejilla 0.01°) si es un ESTABLO de otra organización. */
+  origen: { ubigeo: string; latitud: number; longitud: number; ubicacion_aproximada: boolean } | null;
+  /** Suma de estimaciones de peso por IA: orientativa y NO vinculante; null si no hay. */
+  peso_estimado_total_kg: number | null;
+  es_mio: boolean;
+}
+
+export interface CatalogoLotesResponse {
+  data: LoteCatalogo[];
+  next_cursor: string | null;
+}

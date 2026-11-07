@@ -115,4 +115,17 @@ def test_vision_analizar_video_muestreo_fotogramas():
     response = client.post(
         "/api/v1/vision/analizar-video",
         json={
-         
+            "video_url": "https://cdn.ganadito.pe/videos/lote-bovino-15s.mp4",
+            "duracion_segundos": 15.0,
+            "num_fotogramas": 5,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "biotipo_sugerido" in data
+    assert 1.0 <= data["condicion_corporal_score"] <= 5.0
+    assert "estimacion_dentaria" in data
+    assert 0.0 <= data["confianza_score"] <= 1.0
+    assert 3 <= data["fotogramas_muestreados"] <= 5
+    assert data["es_vinculante"] is False

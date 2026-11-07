@@ -104,4 +104,130 @@ export const taxRoutes: FastifyPluginAsync<TaxRoutesOptions> = async (fastify, o
     async (request, reply) => {
       try {
         const limit = request.query.limit ? Number(request.query.limit) : 50;
-        const comprobantes = await sunatAdapter.listarComprobantes(request.userSession!.activeOr
+        const comprobantes = await sunatAdapter.listarComprobantes(request.userSession!.activeOrganizationId!, limit);
+        return reply.status(200).send({ comprobantes });
+      } catch (err: any) {
+        request.log.error(err);
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Error al listar los comprobantes tributarios.'
+        });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/tributario/comprobantes/:id
+   * Obtiene el detalle de un comprobante tributario.
+   */
+  fastify.get<{ Params: { id: string } }>(
+    '/tributario/comprobantes/:id',
+    { preHandler: [authenticate, requireActiveOrganization] },
+    async (request, reply) => {
+      try {
+        const comprobante = await sunatAdapter.obtenerComprobantePorId(request.params.id, request.userSession!.activeOrganizationId!);
+        return reply.status(200).send(comprobante);
+      } catch (err: any) {
+        if (err instanceof SunatError) {
+          return reply.status(err.statusCode).send({
+            statusCode: err.statusCode,
+            error: err.name,
+            message: err.message
+          });
+        }
+        request.log.error(err);
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Error al obtener el comprobante tributario.'
+        });
+      }
+    }
+  );
+
+  /**
+   * POST /api/v1/fintech/cavali/solicitar-factoring
+   * Registra solicitud de factoring electrónico en CAVALI Factoring Stub.
+   */
+  fastify.post<{ Body: SolicitudFactoringInput }>(
+    '/fintech/cavali/solicitar-factoring',
+    { preHandler: [authenticate, requireActiveOrganization] },
+    async (request, reply) => {
+      const session = request.userSession;
+      try {
+        const resultado = await cavaliAdapter.solicitarFactoring(
+          request.body ?? ({} as any),
+          session?.activeOrganizationId
+        );
+        return reply.status(201).send(resultado);
+      } catch (err: any) {
+        if (err instanceof CavaliError) {
+          return reply.status(err.statusCode).send({
+            statusCode: err.statusCode,
+            error: err.name,
+            message: err.message
+          });
+        }
+        request.log.error(err);
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Error al procesar la solicitud de factoring CAVALI.'
+        });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/fintech/cavali
+   * Lista solicitudes de factoring electrónico.
+   */
+  fastify.get<{ Querystring: { limit?: number } }>(
+    '/fintech/cavali',
+    { preHandler: [authenticate, requireActiveOrganization] },
+    async (request, reply) => {
+      try {
+        const limit = request.query.limit ? Number(request.query.limit) : 50;
+        const factorings = await cavaliAdapter.listarFactorings(request.userSession!.activeOrganizationId!, limit);
+        return reply.status(200).send({ factorings });
+      } catch (err: any) {
+        request.log.error(err);
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Error al listar solicitudes de factoring.'
+        });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/fintech/cavali/:id
+   * Consulta una anotación de factoring por ID.
+   */
+  fastify.get<{ Params: { id: string } }>(
+    '/fintech/cavali/:id',
+    { preHandler: [authenticate, requireActiveOrganization] },
+    async (request, reply) => {
+      try {
+        const factoring = await cavaliAdapter.obtenerFactoringPorId(request.params.id, request.userSession!.activeOrganizationId!);
+        return reply.status(200).send(factoring);
+      } catch (err: any) {
+        if (err instanceof CavaliError) {
+          return reply.status(err.statusCode).send({
+            statusCode: err.statusCode,
+            error: err.name,
+            message: err.message
+          });
+        }
+        request.log.error(err);
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Error al obtener la solicitud de factoring.'
+        });
+      }
+    }
+  );
+};

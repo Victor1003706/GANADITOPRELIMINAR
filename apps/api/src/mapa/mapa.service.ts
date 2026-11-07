@@ -116,4 +116,52 @@ export class MapaService {
     const safeOffset = Math.max(0, offset);
 
     // Privacidad (AGENTS.md §2): la ubicación exacta de un ESTABLO solo se entrega a su
-    // organización
+    // organización. Para el resto se usa un punto ajustado a una rejilla de 0.01° (~1.1 km)
+    // tanto en la respuesta como en el filtro y la distancia, para que no pueda
+    // reconstruirse por trilateración. La dirección textual también se oculta.
+    // El prefiltro sobre `coordenadas` (radio + 2 km) mantiene el uso del índice GiST.
+    const res = await this.pool.query<EstablecimientoCercanoResponse>(
+      `WITH candidatos AS (
+         SELECT e.*,
+                ${sqlUbicacionAproximada('e', '$7')} AS aprox
+         FROM establecimientos e
+         WHERE ST_DWithin(e.coordenadas, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3 + 2000)
+           AND e.activo = TRUE
+           AND ($4::varchar IS NULL OR e.tipo = $4)
+       ),
+       posicionados AS (
+         SELECT c.*,
+                CASE WHEN c.aprox
+                     THEN ST_SnapToGrid(c.coordenadas::geometry, ${REJILLA_UBICACION_GRADOS})::geography
+                     ELSE c.coordenadas END AS pos
+         FROM candidatos c
+       )
+       SELECT
+         id,
+         organizacion_id,
+         nombre_comercial,
+         tipo,
+         ST_Y(pos::geometry) AS latitud,
+         ST_X(pos::geometry) AS longitud,
+         CASE WHEN aprox THEN NULL ELSE direccion_texto END AS direccion_texto,
+         ubigeo,
+         activo,
+         aprox AS ubicacion_aproximada,
+         ROUND((ST_Distance(pos, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) / 1000.0)::numeric, 2)::float AS distancia_km,
+         created_at,
+         updated_at
+       FROM posicionados
+       WHERE ST_DWithin(pos, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3)
+       ORDER BY distancia_km ASC, id ASC
+       LIMIT $5 OFFSET $6`,
+      [lon, lat, radioMetros, tipo ?? null, safeLimit, safeOffset, viewerOrgId ?? null]
+    );
+
+    return {
+      centro: { latitud: lat, longitud: lon },
+      radio_km,
+      total: res.rows.length,
+      establecimientos: res.rows
+    };
+  }
+}

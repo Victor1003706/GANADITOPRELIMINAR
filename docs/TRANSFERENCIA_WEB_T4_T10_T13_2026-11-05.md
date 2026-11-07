@@ -47,4 +47,5 @@ Nicolás pidió expresamente una revisión completa del repositorio y la correcc
 
 Con la misma autorización de Nicolás («crea la primera versión del MVP»), el PR del catálogo toca estas rutas de Víctor:
 - `apps/web/src/routes/subastas/+page.svelte` y el componente nuevo `apps/web/src/lib/components/subastas/CatalogoLotes.svelte`: catálogo, «Mis lotes» y detalle del lote en el formulario.
-- `tests/e2e/{fixtures,auctions.spec,confirmation.spec}.t
+- `tests/e2e/{fixtures,auctions.spec,confirmation.spec}.ts` y `tests/e2e/real/auction-order.spec.ts`: la etiqueta nueva del precio y el e2e del catálogo.
+- `README.md`: el MVP y cómo levantarlo en local.

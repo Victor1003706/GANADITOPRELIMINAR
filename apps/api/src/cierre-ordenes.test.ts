@@ -95,4 +95,126 @@ describe('N04: cierre con organización correcta, consulta de órdenes y WebSock
       headers: { ...auth(comprador.token), 'idempotency-key': `n04-${crypto.randomUUID()}` },
       payload: { monto: 2100 }
     });
-    assert
+    assert.strictEqual(puja.statusCode, 201);
+
+    // Cambia a la organización B ANTES del cierre.
+    await switchTo(comprador, orgB, 'COMPRADOR');
+
+    await pool.query(`UPDATE lotes_subasta SET fecha_cierre = NOW() - INTERVAL '1 second' WHERE id = $1`, [loteId]);
+    await closer.cerrarLotesExpirados(100);
+    await closer.cerrarLotesExpirados(100); // reintento: no debe duplicar
+
+    const ordenes = await pool.query<{ id: string; organizacion_compradora_id: string; vendedor_id: string; estado: string }>(
+      'SELECT id, organizacion_compradora_id, vendedor_id, estado FROM ordenes_compra WHERE lote_id = $1',
+      [loteId]
+    );
+    assert.strictEqual(ordenes.rows.length, 1, 'Una única orden aun con cierres repetidos');
+    const orden = ordenes.rows[0]!;
+    ordenId = orden.id;
+    assert.strictEqual(orden.organizacion_compradora_id, comprador.orgId, 'Organización activa al pujar, no la actual');
+    assert.strictEqual(orden.vendedor_id, vendedor.userId, 'Vendedor = autor del lote');
+    assert.strictEqual(orden.estado, 'PENDIENTE_PAGO');
+  });
+
+  test('2. GET /ordenes y /ordenes/:id solo muestran órdenes de la organización activa', async () => {
+    // Con contexto en orgB no ve la orden (404 sin revelar existencia).
+    const ajena = await app.inject({ method: 'GET', url: `/api/v1/ordenes/${ordenId}`, headers: auth(comprador.token) });
+    assert.strictEqual(ajena.statusCode, 404);
+    const listaB = await app.inject({ method: 'GET', url: '/api/v1/ordenes', headers: auth(comprador.token) });
+    assert.ok(!listaB.json().data.some((o: any) => o.id === ordenId));
+
+    await switchTo(comprador, comprador.orgId, 'COMPRADOR');
+    const propia = await app.inject({ method: 'GET', url: `/api/v1/ordenes/${ordenId}`, headers: auth(comprador.token) });
+    assert.strictEqual(propia.statusCode, 200);
+    assert.strictEqual(propia.json().estado, 'PENDIENTE_PAGO');
+    assert.strictEqual(propia.json().total_a_pagar, 2121);
+
+    const comoVendedor = await app.inject({ method: 'GET', url: '/api/v1/ordenes?rol=vendedor', headers: auth(vendedor.token) });
+    assert.ok(comoVendedor.json().data.some((o: any) => o.id === ordenId));
+    const vendedorComoComprador = await app.inject({ method: 'GET', url: '/api/v1/ordenes?rol=comprador', headers: auth(vendedor.token) });
+    assert.ok(!vendedorComoComprador.json().data.some((o: any) => o.id === ordenId));
+
+    const malCursor = await app.inject({ method: 'GET', url: '/api/v1/ordenes?cursor=xxx', headers: auth(vendedor.token) });
+    assert.strictEqual(malCursor.statusCode, 400);
+  });
+
+  test('3. Paginación por cursor sin duplicados', async () => {
+    // Segundo lote/orden para el mismo vendedor.
+    const lote2 = await app.inject({
+      method: 'POST',
+      url: '/api/v1/subastas',
+      headers: auth(vendedor.token),
+      payload: { precio_base: 1000, incremento_minimo: 50, fecha_cierre: new Date(Date.now() + 600000).toISOString() }
+    });
+    await app.inject({
+      method: 'POST',
+      url: `/api/v1/subastas/${lote2.json().id}/pujas`,
+      headers: { ...auth(comprador.token), 'idempotency-key': `n04-${crypto.randomUUID()}` },
+      payload: { monto: 1050 }
+    });
+    await pool.query(`UPDATE lotes_subasta SET fecha_cierre = NOW() - INTERVAL '1 second' WHERE id = $1`, [lote2.json().id]);
+    await closer.cerrarLotesExpirados(100);
+
+    const p1 = (await app.inject({ method: 'GET', url: '/api/v1/ordenes?rol=vendedor&limit=1', headers: auth(vendedor.token) })).json();
+    assert.strictEqual(p1.data.length, 1);
+    assert.ok(p1.next_cursor);
+    const p2 = (
+      await app.inject({ method: 'GET', url: `/api/v1/ordenes?rol=vendedor&limit=1&cursor=${p1.next_cursor}`, headers: auth(vendedor.token) })
+    ).json();
+    assert.strictEqual(p2.data.length, 1);
+    assert.notStrictEqual(p2.data[0].id, p1.data[0].id);
+    assert.ok(!('cursor_ts' in p2.data[0]), 'la marca interna del cursor no se expone');
+    const detalle = (await app.inject({ method: 'GET', url: `/api/v1/ordenes/${p2.data[0].id}`, headers: auth(vendedor.token) })).json();
+    assert.ok(!('cursor_ts' in detalle), 'tampoco en GET /ordenes/:id');
+  });
+
+  test('3b. Regresión: dos órdenes en el MISMO milisegundo no se saltan entre páginas', async () => {
+    const ordenes = await pool.query<{ id: string }>(
+      `SELECT o.id FROM ordenes_compra o WHERE o.organizacion_vendedora_id = $1 ORDER BY o.id LIMIT 2`,
+      [vendedor.orgId]
+    );
+    assert.strictEqual(ordenes.rows.length, 2);
+    // Mismo milisegundo, distinto microsegundo: con el cursor truncado a ms se perdía una.
+    await pool.query(`UPDATE ordenes_compra SET created_at = '2030-01-01T00:00:00.123100Z' WHERE id = $1`, [ordenes.rows[0]!.id]);
+    await pool.query(`UPDATE ordenes_compra SET created_at = '2030-01-01T00:00:00.123900Z' WHERE id = $1`, [ordenes.rows[1]!.id]);
+
+    const vistos: string[] = [];
+    let cursor: string | null = null;
+    for (let pagina = 0; pagina < 10; pagina++) {
+      const url: string = `/api/v1/ordenes?rol=vendedor&limit=1${cursor ? `&cursor=${cursor}` : ''}`;
+      const r: any = (await app.inject({ method: 'GET', url, headers: auth(vendedor.token) })).json();
+      vistos.push(...r.data.map((o: any) => o.id));
+      cursor = r.next_cursor;
+      if (!cursor) break;
+    }
+    for (const fila of ordenes.rows) assert.ok(vistos.includes(fila.id), `la orden ${fila.id} no debe saltarse`);
+    assert.strictEqual(new Set(vistos).size, vistos.length, 'sin duplicados');
+  });
+
+  test('4. WebSocket: sin token o con lote inexistente se cierra con 1008', async () => {
+    assert.strictEqual(await wsCloseCode(`${baseWs}/api/v1/subastas/${loteId}/live`), 1008);
+    assert.strictEqual(await wsCloseCode(`${baseWs}/api/v1/subastas/${loteId}/live?access_token=invalido`), 1008);
+    assert.strictEqual(
+      await wsCloseCode(`${baseWs}/api/v1/subastas/${crypto.randomUUID()}/live?access_token=${comprador.token}`),
+      1008
+    );
+  });
+
+  test('5. Proyección pública: la adjudicación no expone comprador ni totales; eventos de orden no se publican', () => {
+    const adj = proyectarEventoPublico('LOTE_SUBASTA', loteId, 'SUBASTA_ADJUDICADA', {
+      lote_id: loteId,
+      codigo_lote: 'L-1',
+      orden_id: 'o',
+      comprador_id: 'u',
+      organizacion_compradora_id: 'org',
+      monto_adjudicado: 2100,
+      total_a_pagar: 2121
+    });
+    assert.deepStrictEqual(adj?.mensaje, {
+      event_type: 'SUBASTA_ADJUDICADA',
+      lote_id: loteId,
+      data: { codigo_lote: 'L-1', monto_adjudicado: 2100, estado: 'ADJUDICADO' }
+    });
+    assert.strictEqual(proyectarEventoPublico('ORDEN_COMPRA', 'x', 'ORDEN_PAGADA', {}), null);
+  });
+});

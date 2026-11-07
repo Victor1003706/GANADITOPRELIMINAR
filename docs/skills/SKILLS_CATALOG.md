@@ -48,4 +48,4 @@ Propósito: Optimización del contexto del agente, prevención de degradación y
 
 Según lo indicado en la estrategia del ecosistema:
 - **Skills de Frontend y Diseño** (`impeccable`, `design-taste-frontend`, `emil-design-eng`): Reservadas para la fase de maquetación y UI de SvelteKit.
-- **Skills de Dominio Ganadito** (`ganadito-domain-model`, `ganadito-auction-engineering`, `ganadito-geospatial-postgis`, `ganadito-payments-and-ledger`, `ganadito-security-and-permissions`, `ganadito-api-and-con
+- **Skills de Dominio Ganadito** (`ganadito-domain-model`, `ganadito-auction-engineering`, `ganadito-geospatial-postgis`, `ganadito-payments-and-ledger`, `ganadito-security-and-permissions`, `ganadito-api-and-contracts`, `ganadito-quality-gates`, `ganadito-peru-integrations`): Se diseñarán e incorporarán conforme se aprueben las especificaciones de negocio correspondientes.

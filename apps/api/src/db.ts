@@ -118,4 +118,76 @@ export async function runMigrations(migrationsDir?: string): Promise<MigrationRe
 
   const client = await getPool().connect();
   try {
-    await clien
+    await client.query('SELECT pg_advisory_lock($1)', [MIGRATIONS_LOCK_KEY]);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        filename VARCHAR(255) PRIMARY KEY,
+        checksum CHAR(64) NOT NULL,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+
+    const appliedRes = await client.query<{ filename: string; checksum: string }>(
+      'SELECT filename, checksum FROM schema_migrations'
+    );
+    const applied = new Map(appliedRes.rows.map((r) => [r.filename, r.checksum]));
+
+    for (const file of files) {
+      const ddl = fs.readFileSync(path.join(dir, file), 'utf8');
+      const checksum = crypto.createHash('sha256').update(ddl).digest('hex');
+      const previous = applied.get(file);
+
+      if (previous !== undefined) {
+        if (previous !== checksum) {
+          throw new Error(
+            `La migración ${file} ya aplicada fue modificada (checksum distinto). Cree una migración nueva.`
+          );
+        }
+        result.skipped.push(file);
+        continue;
+      }
+
+      try {
+        await client.query('BEGIN');
+        await client.query(ddl);
+        await client.query('INSERT INTO schema_migrations (filename, checksum) VALUES ($1, $2)', [
+          file,
+          checksum
+        ]);
+        await client.query('COMMIT');
+        result.applied.push(file);
+      } catch (error) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw new Error(`Fallo al aplicar ${file}: ${(error as Error).message}`);
+      }
+    }
+
+    return result;
+  } finally {
+    await client.query('SELECT pg_advisory_unlock($1)', [MIGRATIONS_LOCK_KEY]).catch(() => {});
+    client.release();
+  }
+}
+
+/**
+ * Compatibilidad: con `sqlPathOverride` ejecuta un único archivo SQL (uso en tests);
+ * sin argumentos aplica las migraciones pendientes con control de versión.
+ */
+export async function runInitialMigration(sqlPathOverride?: string): Promise<void> {
+  if (!sqlPathOverride) {
+    await runMigrations();
+    return;
+  }
+
+  const client = await getPool().connect();
+  try {
+    const ddl = fs.readFileSync(sqlPathOverride, 'utf8');
+    await client.query('BEGIN');
+    await client.query(ddl);
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}

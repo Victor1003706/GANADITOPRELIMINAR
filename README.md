@@ -72,4 +72,16 @@ npm run test:e2e:http
 npm run test:config
 ```
 
-Los tests backend requieren PostgreSQL/PostGIS y Redis aislados. `test:e2e` y `test:e2e:http` usan fixtures identificados; `test:config` comprueba el entorno sin conectar a servicios. `test:e2e:real` es una suite separada con API y persistencia reales que la CI ejecuta únicamente sobre PostGIS/Redis efímeros, con guardias de destino y pagos apagados. Su [configuración aislada](docs/DEVELOPMENT.md#navegador-con-api-y-persistencia-reales-en-ci) rechaza destinos remotos o distintos del destino de prueba permitido; no usar bases compartidas, el PostgreSQL local existente ni Ne
+Los tests backend requieren PostgreSQL/PostGIS y Redis aislados. `test:e2e` y `test:e2e:http` usan fixtures identificados; `test:config` comprueba el entorno sin conectar a servicios. `test:e2e:real` es una suite separada con API y persistencia reales que la CI ejecuta únicamente sobre PostGIS/Redis efímeros, con guardias de destino y pagos apagados. Su [configuración aislada](docs/DEVELOPMENT.md#navegador-con-api-y-persistencia-reales-en-ci) rechaza destinos remotos o distintos del destino de prueba permitido; no usar bases compartidas, el PostgreSQL local existente ni Neon para ese comando. Consultar resultados y límites del SHA final en CI y en el PR. No almacenar secretos ni datos reales en reportes.
+
+## Trabajo entre Víctor y Nicolás
+
+- [Instalación, comandos y variables](docs/DEVELOPMENT.md).
+- [Propiedad de archivos y reservas](docs/OWNERSHIP.md).
+- [Entregas V01-V06 y cola de PR](docs/VICTOR_DELIVERY.md).
+- [Inventario de contratos y solicitudes a Nicolás](docs/CONTRACT_REVIEW.md).
+- [Ramas, revisión cruzada e integración](docs/GIT_WORKFLOW.md).
+- [Staging, versión y recuperación](infrastructure/deployment/README.md).
+- [Arquitectura](docs/ARCHITECTURE.md) y [reglas de agentes](AGENTS.md).
+
+Cada entrega requiere rutas asignadas, contrato identificado, pruebas pertinentes y revisión del otro programador. Las dependencias se publican en PR separado. Reportar incidencias usando las [plantillas](.github/ISSUE_TEMPLATE/) y describir alcance, evidencia y limitaciones en el [PR](.github/PULL_REQUEST_TEMPLATE.md).

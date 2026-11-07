@@ -103,4 +103,22 @@ export class OrdenesConsultaService {
     const hasMore = res.rows.length > limit;
     const filas = hasMore ? res.rows.slice(0, limit) : res.rows;
     const data = filas.map(({ cursor_ts: _cursor, ...orden }) => orden);
-    return { d
+    return { data, next_cursor: hasMore ? encodeCursor(filas[filas.length - 1]!) : null };
+  }
+
+  async obtener(id: string, organizacionId: string): Promise<OrdenResumen> {
+    if (!UUID_RE.test(id)) {
+      throw new ConsultaOrdenError('Orden de compra no encontrada.', 404);
+    }
+    const res = await this.pool.query<OrdenResumen & { cursor_ts: string }>(
+      `${SELECT_ORDEN}
+       WHERE o.id = $1 AND (o.organizacion_compradora_id = $2 OR o.organizacion_vendedora_id = $2)`,
+      [id, organizacionId]
+    );
+    if (res.rows.length === 0) {
+      throw new ConsultaOrdenError('Orden de compra no encontrada.', 404);
+    }
+    const { cursor_ts: _cursor, ...orden } = res.rows[0]!;
+    return orden;
+  }
+}

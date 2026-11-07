@@ -39,4 +39,4 @@ Abrir ambos PR como borradores y solicitar revisión cruzada de Nicolás. No apr
 
 La instalación de la aplicación conectada observada pertenece solo a `Victor1003706`; para habilitar también la vía de escritura del plugin sobre repositorios de Nicolás, el propietario debe autorizar una instalación con acceso a ese repositorio. Esto no impide publicar con el Git que el usuario ya autenticó.
 
-Una copia transferible se genera en `tmp/handoff/Ganadito_Victor.bundle` con las dos ramas y el historial necesario. Puede inspeccionarse con `gi
+Una copia transferible se genera en `tmp/handoff/Ganadito_Victor.bundle` con las dos ramas y el historial necesario. Puede inspeccionarse con `git bundle verify <archivo>` y usarse como origen de `git fetch` en otro clon. No contiene `.env`, credenciales, `node_modules` ni artefactos de navegador. Los resultados de CI y la aprobación humana se consultan en cada PR; un borrador publicado no acredita aceptación final.

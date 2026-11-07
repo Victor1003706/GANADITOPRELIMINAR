@@ -74,4 +74,30 @@ describe('cursor de órdenes con PostgreSQL real', {
         }
 
         // El mismo cliente mantiene todas las consultas dentro de la transacción de fixtures propios.
-        const service = new OrdenesConsultaService(client
+        const service = new OrdenesConsultaService(client as unknown as pg.Pool);
+        const primera = await service.listar(organizacionCompradoraId, { rol: 'comprador', limit: '1' });
+        assert.strictEqual(primera.data.length, 1);
+        assert.ok(primera.next_cursor);
+        const segunda = await service.listar(organizacionCompradoraId, {
+          rol: 'comprador', limit: '1', cursor: primera.next_cursor
+        });
+        assert.strictEqual(segunda.data.length, 1);
+        assert.strictEqual(segunda.next_cursor, null);
+        assert.deepStrictEqual([...primera.data, ...segunda.data].map((o) => o.id), caso.ordenEsperado.map((i) => ordenesIds[i]));
+        assert.strictEqual(JSON.parse(Buffer.from(primera.next_cursor, 'base64url').toString())[0], caso.timestamps[caso.ordenEsperado[0]!]);
+        assert.strictEqual(Object.hasOwn(primera.data[0]!, 'cursor_ts'), false);
+        assert.strictEqual(Object.hasOwn(segunda.data[0]!, 'cursor_ts'), false);
+
+        const detalle = await service.obtener(primera.data[0]!.id, organizacionCompradoraId);
+        assert.deepStrictEqual(detalle, primera.data[0]);
+        assert.strictEqual(Object.hasOwn(detalle, 'cursor_ts'), false);
+      } finally {
+        try {
+          await client.query('ROLLBACK');
+        } finally {
+          client.release();
+        }
+      }
+    });
+  }
+});

@@ -98,4 +98,20 @@ export const REGLAS = {
   ticketUsuario: { nombre: 'ticket-ws', maximo: 30, ventanaMs: MINUTO, clave: porUsuario },
   pesoUsuario: { nombre: 'estimacion-peso', maximo: 20, ventanaMs: MINUTO, clave: porUsuario },
   cotizarUsuario: { nombre: 'cotizar-flete', maximo: 30, ventanaMs: MINUTO, clave: porUsuario }
-} satisfies Record<st
+} satisfies Record<string, ReglaLimite>;
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    limitador: LimitadorTasa;
+    limitarTasa: boolean;
+  }
+}
+
+/** Hook que aplica las reglas solo si el límite está activo en esta app. */
+export function limitar(fastify: import('fastify').FastifyInstance, ...reglas: ReglaLimite[]) {
+  const hook = fastify.limitador.hook(...reglas);
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!fastify.limitarTasa) return;
+    return hook(request, reply);
+  };
+}

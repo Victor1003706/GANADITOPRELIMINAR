@@ -48,4 +48,12 @@ Rutas: tests/e2e/real, configuración/CI propia si corresponde, infrastructure/d
 
 ## Revisión focal
 
-No datos privados en PUBLICA ni propiedades heredadas interpretadas como tipos válidos. No cambiar precisión pública en front por ausencia de flag. No reutilizar respuestas de otro contexto ni expon
+No datos privados en PUBLICA ni propiedades heredadas interpretadas como tipos válidos. No cambiar precisión pública en front por ausencia de flag. No reutilizar respuestas de otro contexto ni exponer direcciones al cerrar sesión. No confundir servidor Vite con artefacto de entrega, CI efímera con staging o lista verde con aceptación humana.
+
+## Actualización de base — 5 de noviembre
+
+La implementación backend inicial se preservó solo localmente en `93e1cdd`. Se adoptan las correcciones originales de Nicolás #46/#50 y su contrato `PasaporteDigitalVista`, sin sobrescribir sus pruebas PostgreSQL ni publicar cambios duplicados. Los checks de la lista se completarán con la evidencia del código final, no con los resultados históricos.
+
+## Evidencia de ejecución
+
+Código cce1957, PR #51, CI 42029557812 con cuatro jobs correctos, dos recorridos reales sobre web compilada. Detalle en HITOS_VICTOR_2026-11-05.md. Los cuatro archivos backend/contrato originales de Nicolás se adoptaron; solo el tipo cercano requirió dirección nullable. Revisión independiente: rechazo de históricos detectado y corregido con ocho regresiones; lookup visual protegido con Object.hasOwn. Las seis aceptaciones de Nicolás y los hallazgos ajenos #47–#50 siguen pendientes. Se comprobará también la CI del HEAD final tras este registro documental.

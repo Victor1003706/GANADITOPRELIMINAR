@@ -128,4 +128,71 @@ export const mayoristaRoutes: FastifyPluginAsync<MayoristaRoutesOptions> = async
     '/pools/:id/unirse',
     { preHandler: [authenticate] },
     async (request, reply) => {
-      const session = request.userSession!
+      const session = request.userSession!;
+      const { id } = request.params;
+
+      if (!session.activeOrganizationId) {
+        return reply.status(400).send({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: 'Debe contar con una organización activa en su sesión para unirse a un pool mayorista.'
+        });
+      }
+
+      try {
+        const resultado = await mayoristaService.unirsePool(
+          session.userId,
+          session.activeOrganizationId,
+          id,
+          request.body
+        );
+
+        return reply.status(201).send(resultado);
+      } catch (err: any) {
+        if (err instanceof MayoristaError) {
+          return reply.status(err.statusCode).send({
+            statusCode: err.statusCode,
+            error: err.name,
+            message: err.message
+          });
+        }
+        request.log.error(err);
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Error al unirse al pool mayorista.'
+        });
+      }
+    }
+  );
+
+  /**
+   * POST /api/v1/mayorista/pools/cerrar-expirados
+   * Cierre desasistido de pools con fecha límite vencida.
+   */
+  fastify.post(
+    '/pools/cerrar-expirados',
+    // Igual que el cierre de subastas: solo personal interno (antes era anónimo).
+    { onRequest: [authenticate, requireRole('ADMIN')] },
+    async (request, reply) => {
+      try {
+        const resultado = await mayoristaService.cerrarPoolsExpirados();
+        return reply.status(200).send(resultado);
+      } catch (err: any) {
+        if (err instanceof MayoristaError) {
+          return reply.status(err.statusCode).send({
+            statusCode: err.statusCode,
+            error: err.name,
+            message: err.message
+          });
+        }
+        request.log.error(err);
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Error al cerrar los pools expirados.'
+        });
+      }
+    }
+  );
+};

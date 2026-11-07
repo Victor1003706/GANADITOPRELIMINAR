@@ -111,4 +111,105 @@
   {:else}
     <!-- Línea de tiempo vertical -->
     <div class="relative pl-6 sm:pl-8 space-y-8 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-800">
-      {#each eventos as evento (even
+      {#each eventos as evento (evento.secuencia)}
+        {@const config = (Object.hasOwn(CONFIG_EVENTOS, evento.event_type) ? CONFIG_EVENTOS[evento.event_type] : undefined) ?? {
+          titulo: evento.event_type,
+          icono: '📌',
+          badgeClases: 'bg-slate-800 text-slate-300 border-slate-700',
+          nodoColor: 'bg-slate-700 ring-slate-800'
+        }}
+        <div class="relative group">
+          <!-- Nodo en la línea vertical -->
+          <div
+            class="absolute -left-6 sm:-left-8 top-1.5 w-5 h-5 rounded-full {config.nodoColor} ring-4 flex items-center justify-center text-[10px] text-white shadow-md z-10 transition-transform group-hover:scale-110"
+          >
+            <span class="text-[9px] font-black">{evento.secuencia}</span>
+          </div>
+
+          <!-- Tarjeta del Evento -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg space-y-3 transition-colors hover:border-slate-700">
+            <!-- Encabezado del Evento -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/60 pb-3">
+              <div class="flex items-center gap-2.5">
+                <span class="text-lg">{config.icono}</span>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-bold text-white">{config.titulo}</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold border {config.badgeClases}">
+                      {evento.event_type}
+                    </span>
+                  </div>
+                  <span class="text-[11px] text-slate-400">
+                    {#if evento.autor_id}Autor: <code class="font-mono text-slate-300">USR-{evento.autor_id.slice(0, 8)}</code>{:else}<span>Autor reservado</span>{/if}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Fecha y hora -->
+              <div class="text-xs font-mono text-slate-400 self-start sm:self-auto">
+                🕒 {formatoFecha(evento.created_at)}
+              </div>
+            </div>
+
+            <!-- Contenido del Metadata JSON renderizado -->
+            {#if evento.metadata && Object.keys(evento.metadata).length > 0}
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+                <span class="text-[10px] uppercase font-bold text-slate-500 block mb-1.5 tracking-wider">
+                  Detalles del Evento Pecuario
+                </span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                  {#each Object.entries(evento.metadata) as [clave, valor]}
+                    <div class="bg-slate-900/80 px-2.5 py-1.5 rounded border border-slate-800/60">
+                      <span class="text-[10px] text-slate-400 uppercase font-medium block truncate">
+                        {clave.replace(/_/g, ' ')}:
+                      </span>
+                      <span class="font-semibold text-slate-200 font-mono text-xs break-all">
+                        {typeof valor === 'object' ? JSON.stringify(valor) : String(valor)}
+                      </span>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+
+            <!-- Auditoría de Eslabón Criptográfico (prev_hash y current_hash): solo en la vista
+                 COMPLETA. La vista PUBLICA no trae hashes; su integridad la confirma /verificar. -->
+            {#if evento.prev_hash && evento.current_hash}
+            {@const prevHash = evento.prev_hash}
+            {@const currentHash = evento.current_hash}
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/50 space-y-1.5 text-[11px]">
+              <!-- Hash Previo -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <span class="text-slate-500 font-medium">Hash Previo (Parent SHA-256):</span>
+                <span class="font-mono text-slate-400 text-[10px] break-all sm:text-right" title={prevHash}>
+                  {prevHash === '0'.repeat(64) ? '0000000000000000... (Génesis)' : `${prevHash.slice(0, 16)}...${prevHash.slice(-16)}`}
+                </span>
+              </div>
+
+              <!-- Hash Actual -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1 border-t border-slate-900">
+                <span class="text-emerald-400 font-bold flex items-center gap-1">
+                  <span>🔒 Hash Bloque #{evento.secuencia}:</span>
+                </span>
+                <div class="flex items-center gap-2 self-end sm:self-auto">
+                  <span class="font-mono font-bold text-emerald-300 text-[10px] break-all" title={currentHash}>
+                    {currentHash.slice(0, 18)}...{currentHash.slice(-18)}
+                  </span>
+                  <button
+                    type="button"
+                    onclick={() => copiarHash(currentHash)}
+                    class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 transition-colors shrink-0"
+                    title="Copiar hash completo"
+                  >
+                    {hashCopiado === currentHash ? '✓ Copiado' : 'Copiar'}
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/if}
+          </div>
+        </div>
+      {/each}
+    </div>
+  {/if}
+</div>

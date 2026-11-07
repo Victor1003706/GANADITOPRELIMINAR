@@ -70,4 +70,61 @@ describe('Catálogo de lotes (GET /subastas) y detalle del lote', { concurrency:
   });
 
   test('público: solo ACTIVO por defecto, nunca BORRADOR, y origen aproximado para terceros', async () => {
-    const borrador = await crearLote(vendedor, { estado: 'BORRADOR', categoria: 'VAQUILLONA' }
+    const borrador = await crearLote(vendedor, { estado: 'BORRADOR', categoria: 'VAQUILLONA' }, 5);
+    assert.strictEqual(borrador.statusCode, 201);
+    const r = await app.inject({ method: 'GET', url: '/api/v1/subastas?limit=50' });
+    assert.strictEqual(r.statusCode, 200, r.body);
+    const ids = r.json().data.map((l: any) => l.id);
+    assert.ok(!ids.includes(borrador.json().id), 'un BORRADOR no es público');
+    assert.ok(r.json().data.every((l: any) => l.estado === 'ACTIVO'));
+    assert.strictEqual((await app.inject({ method: 'GET', url: '/api/v1/subastas?estado=BORRADOR' })).statusCode, 400);
+
+    // Buscar nuestro lote con origen recorriendo el catálogo.
+    let cursor: string | null = null;
+    let propio: any;
+    for (let i = 0; i < 40 && !propio; i++) {
+      const pagina: any = (await app.inject({ method: 'GET', url: `/api/v1/subastas?limit=50${cursor ? `&cursor=${cursor}` : ''}`, headers: { authorization: `Bearer ${comprador}` } })).json();
+      propio = pagina.data.find((l: any) => l.establecimiento_id === establoId);
+      cursor = pagina.next_cursor;
+      if (!cursor) break;
+    }
+    assert.ok(propio, 'el lote con origen aparece en el catálogo');
+    assert.strictEqual(propio.es_mio, false);
+    assert.strictEqual(propio.origen.ubicacion_aproximada, true, 'un ESTABLO ajeno se muestra aproximado');
+    assert.ok(Math.abs(propio.origen.latitud - -15.843217) > 1e-4, 'no revela la latitud exacta');
+    assert.strictEqual(propio.origen.ubigeo, '210101');
+  });
+
+  test('mios=true: exige sesión y lista todos los lotes propios, incluidos borradores', async () => {
+    assert.strictEqual((await app.inject({ method: 'GET', url: '/api/v1/subastas?mios=true' })).statusCode, 401);
+    const r = await app.inject({ method: 'GET', url: '/api/v1/subastas?mios=true&limit=50', headers: { authorization: `Bearer ${vendedor}` } });
+    assert.strictEqual(r.statusCode, 200);
+    const datos = r.json().data;
+    assert.ok(datos.some((l: any) => l.estado === 'BORRADOR'));
+    assert.ok(datos.every((l: any) => l.es_mio === true));
+    const conOrigen = datos.find((l: any) => l.establecimiento_id === establoId);
+    assert.strictEqual(conOrigen.origen.ubicacion_aproximada, false, 'el dueño ve su posición exacta');
+    const ajenos = (await app.inject({ method: 'GET', url: '/api/v1/subastas?mios=true&limit=50', headers: { authorization: `Bearer ${otroVendedor}` } })).json().data;
+    assert.ok(!ajenos.some((l: any) => lotes.includes(l.id)), 'otra organización no ve mis lotes con mios=true');
+  });
+
+  test('paginación por cursor sin saltos ni duplicados', async () => {
+    for (let i = 0; i < 3; i++) await crearLote(otroVendedor, { categoria: `PAG-${i}` }, 100 + i);
+    const vistos: string[] = [];
+    let cursor: string | null = null;
+    for (let i = 0; i < 20; i++) {
+      const r: any = (await app.inject({ method: 'GET', url: `/api/v1/subastas?mios=true&limit=1${cursor ? `&cursor=${cursor}` : ''}`, headers: { authorization: `Bearer ${otroVendedor}` } })).json();
+      vistos.push(...r.data.map((l: any) => l.id));
+      cursor = r.next_cursor;
+      if (!cursor) break;
+    }
+    assert.strictEqual(new Set(vistos).size, vistos.length, 'sin duplicados');
+    assert.strictEqual(vistos.length, 3);
+    assert.strictEqual((await app.inject({ method: 'GET', url: '/api/v1/subastas?cursor=xxx' })).statusCode, 400);
+    assert.strictEqual((await app.inject({ method: 'GET', url: '/api/v1/subastas?limit=999' })).statusCode, 400);
+    const malo = (v: unknown) => Buffer.from(JSON.stringify(v)).toString('base64url');
+    for (const c of [malo(['2026-99-99T00:00:00Z', crypto.randomUUID()]), malo(['2026-11-05T00:00:00Z', '-'.repeat(36)])]) {
+      assert.strictEqual((await app.inject({ method: 'GET', url: `/api/v1/subastas?cursor=${c}` })).statusCode, 400, 'un cursor imposible da 400, no 500');
+    }
+  });
+});

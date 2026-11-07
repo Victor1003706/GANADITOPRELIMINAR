@@ -89,4 +89,32 @@
     <p class="notice">Selecciona una organización para consultar sus órdenes. <a href="/contexto">Cambiar contexto</a></p>
   {:else}
     <p class="muted">Organización: {$session.context?.razon_social ?? $session.organizationId}. Importes en PEN, según el servidor.</p>
-    <label style="max
+    <label style="max-width: 300px">Ver órdenes como
+      <select value={role} onchange={event => { roleChoice = { context: contextKey, role: event.currentTarget.value as OrderRole }; }}>
+        <option value="comprador">Comprador</option><option value="vendedor">Vendedor</option>
+      </select>
+    </label>
+    {#if lotId}<p class="muted break-all">Lote filtrado: {lotId}. El filtro se aplica únicamente a las páginas consultadas.</p>{/if}
+    {#if error}<div class="error"><p role="alert">{error}</p><a href="/contexto">Cambiar contexto</a> · <button type="button" class="secondary" disabled={loading} onclick={() => void load(nextCursor, queryKey, role)}>Reintentar consulta</button></div>{/if}
+    {#if loading}<p role="status">Consultando órdenes…</p>{/if}
+    {#each visibleOrders as order (order.id)}
+      <article class="panel">
+        <h2>{order.codigo_lote}</h2><p class="badge" style="display: inline-block">{order.estado}</p>
+        <p>Total a pagar (PEN): <strong>{orderAmount(order.total_a_pagar)}</strong></p>
+        <p class="muted">Registro: <time datetime={order.created_at}>{new Date(order.created_at).toLocaleString('es-PE')}</time></p>
+        <a href={`/ordenes/${encodeURIComponent(order.id)}`} aria-label={`Ver orden ${order.codigo_lote}`}>Ver orden</a>
+      </article>
+    {/each}
+    {#if loaded && visibleOrders.length === 0}
+      <p role="status">{lotId ? 'No hay coincidencias en las páginas consultadas.' : 'No se recibieron órdenes en esta consulta.'}</p>
+    {/if}
+    {#if nextCursor !== null}
+      <p class="muted">Hay más páginas por consultar.</p>
+      <button type="button" disabled={loading} onclick={() => void load(nextCursor, queryKey, role)}>Cargar más órdenes</button>
+    {/if}
+    {#if cursorWarning}<p class="notice" role="status">{cursorWarning}</p>{/if}
+    {#if loaded}<p class="muted">Se muestran los registros recibidos. La consulta paginada no garantiza un historial completo.</p>{/if}
+  {/if}
+  <div class="panel"><button type="button" disabled>Pago no disponible</button><p class="muted">Los pagos permanecen deshabilitados.</p></div>
+  <a href="/subastas">Ir a lotes y subastas</a>
+</section>

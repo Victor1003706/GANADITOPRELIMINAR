@@ -81,4 +81,14 @@ test('cursores con fechas u horas imposibles se rechazan antes de consultar Post
   assert.strictEqual(consultas, 0);
 });
 
-test('el cursor conserva timestamps válidos bisiestos, antiguos y de microsegundos',
+test('el cursor conserva timestamps válidos bisiestos, antiguos y de microsegundos', async () => {
+  const enviados: unknown[][] = [];
+  const pool = { async query(_sql: string, params: unknown[]) { enviados.push(params); return { rows: [] }; } } as unknown as pg.Pool;
+  const service = new OrdenesConsultaService(pool);
+  for (const timestamp of ['2024-02-29T10:00:00.123Z', '2026-01-04T10:00:00.123900Z', '2026-01-04T10:00:00Z']) {
+    const cursor = Buffer.from(JSON.stringify([timestamp, '00000000-0000-4000-8000-000000000002'])).toString('base64url');
+    await service.listar('00000000-0000-4000-8000-000000000001', { cursor });
+    assert.strictEqual(enviados.at(-1)![2], timestamp);
+  }
+  assert.strictEqual(enviados.length, 3);
+});

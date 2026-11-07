@@ -93,4 +93,107 @@ export async function emitirTicketWs(
 /**
  * Consume el ticket de forma atómica: vigente, sin usar, del mismo lote y con la
  * membresía (organización + rol) con que se emitió TODAVÍA activa en PostgreSQL.
- * Devuelve la sesión o null. Un segundo intento con 
+ * Devuelve la sesión o null. Un segundo intento con el mismo ticket siempre falla.
+ */
+export async function consumirTicketWs(pool: pg.Pool, ticket: string, loteId: string): Promise<SesionWs | null> {
+  if (ticket.length < 20 || ticket.length > 100) return null;
+  const res = await pool.query<{ user_id: string; organizacion_id: string; rol: string }>(
+    `UPDATE ws_tickets t SET usado_en = clock_timestamp()
+     WHERE t.hash = $1 AND t.lote_id = $2 AND t.usado_en IS NULL AND t.expira_en > clock_timestamp()
+       AND EXISTS (
+         SELECT 1 FROM user_organizaciones_roles uor
+         WHERE uor.user_id = t.user_id AND uor.organizacion_id = t.organizacion_id
+           AND uor.rol = t.rol AND uor.is_active_context)
+     RETURNING t.user_id, t.organizacion_id, t.rol`,
+    [hashTicket(ticket), loteId]
+  );
+  const fila = res.rows[0];
+  return fila
+    ? { userId: fila.user_id, organizacionId: fila.organizacion_id, rol: fila.rol, expiraEnMs: Date.now() + DURACION_MAX_SESION_TICKET_MS }
+    : null;
+}
+
+/** Identidad asociada a cada socket abierto (para auditoría o eventos por usuario). */
+export const sesionesWs = new WeakMap<object, SesionWs>();
+
+interface SocketSupervisable {
+  readonly readyState: number;
+  close(code?: number, reason?: string): void;
+  once(evento: 'close', fn: () => void): unknown;
+}
+
+/**
+ * Mantiene vigente la autorización DURANTE la conexión:
+ *  - cierra al expirar la sesión (exp del JWT o 15 min con ticket);
+ *  - revalida la membresía en PostgreSQL cada `revalidacionMs` y cierra si se revocó;
+ *  - si la BD no responde `MAX_FALLOS_REVALIDACION` veces seguidas, cierra (falla cerrado).
+ * Cada instancia revalida sus propios sockets contra PostgreSQL: no depende de un aviso
+ * entre instancias que podría perderse.
+ */
+export function supervisarSesionWs(
+  socket: SocketSupervisable,
+  sesion: SesionWs,
+  pool: pg.Pool,
+  revalidacionMs: number = REVALIDACION_WS_MS
+): void {
+  // El handshake hace varios await: si el cliente ya cortó, su 'close' ocurrió antes de
+  // registrar el listener y los timers no se limpiarían nunca. No se crean.
+  if (socket.readyState !== 0 && socket.readyState !== 1) return;
+  let fallos = 0;
+  let cerrado = false;
+  let enCurso = false;
+  const cerrar = (codigo: number, motivo: string) => {
+    if (cerrado) return;
+    cerrado = true;
+    if (socket.readyState === 0 || socket.readyState === 1) socket.close(codigo, motivo);
+  };
+  // Acotado: setTimeout dispara de inmediato con retrasos > 2^31-1 ms.
+  const restante = Math.min(Math.max(0, sesion.expiraEnMs - Date.now()), DURACION_MAX_SESION_TICKET_MS);
+  const timerExpiracion = setTimeout(() => cerrar(1008, 'Sesión expirada; reconecte con un ticket nuevo.'), restante);
+  const timerRevalidacion = setInterval(async () => {
+    // Sin solapes: con la BD lenta no se apilan consultas del mismo socket.
+    if (enCurso || cerrado) return;
+    enCurso = true;
+    let plazo: ReturnType<typeof setTimeout> | undefined;
+    try {
+      // Plazo por consulta: una promesa de PostgreSQL que nunca resuelve dejaría enCurso
+      // en true para siempre y el socket seguiría recibiendo sin revalidarse. Vencer el
+      // plazo cuenta como fallo (falla cerrado tras MAX_FALLOS_REVALIDACION).
+      const vigente = await Promise.race([
+        membresiaVigente(pool, sesion),
+        new Promise<never>((_, rechazar) => {
+          // Plazo propio, el doble del intervalo: una BD lenta pero sana no suma fallos espurios.
+          plazo = setTimeout(() => rechazar(new Error('PLAZO_REVALIDACION')), 2 * revalidacionMs);
+          plazo.unref?.();
+        })
+      ]);
+      fallos = 0;
+      if (!vigente) cerrar(1008, 'Sesión revocada.');
+    } catch {
+      fallos += 1;
+      if (fallos >= MAX_FALLOS_REVALIDACION) cerrar(1011, 'No se pudo verificar la sesión.');
+    } finally {
+      if (plazo) clearTimeout(plazo);
+      enCurso = false;
+    }
+  }, revalidacionMs);
+  timerExpiracion.unref?.();
+  timerRevalidacion.unref?.();
+  socket.once('close', () => {
+    cerrado = true;
+    clearTimeout(timerExpiracion);
+    clearInterval(timerRevalidacion);
+  });
+}
+
+/**
+ * ?access_token= queda solo por compatibilidad mientras la web migra al ticket.
+ * Por defecto se permite fuera de producción y se rechaza en producción; la variable
+ * WS_PERMITIR_ACCESS_TOKEN_EN_URL ('true' | 'false') lo fuerza.
+ */
+export function permiteAccessTokenEnUrl(env: NodeJS.ProcessEnv = process.env): boolean {
+  const v = env.WS_PERMITIR_ACCESS_TOKEN_EN_URL;
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  return env.NODE_ENV !== 'production';
+}

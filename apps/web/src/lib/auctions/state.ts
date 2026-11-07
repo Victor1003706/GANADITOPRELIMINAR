@@ -82,4 +82,16 @@ export function parseBidReceipt(value: unknown, lotId: string): AcceptedBid {
   return { ...bid, lote_id: lotId, idempotency_key: value.idempotency_key };
 }
 
-export type AuctionEvent = { kind: 'bid'; data: PublicBid } | { kind: 'refres
+export type AuctionEvent = { kind: 'bid'; data: PublicBid } | { kind: 'refresh' };
+
+export function parseLiveEvent(value: unknown, lotId: string): AuctionEvent | null {
+  if (!record(value) || value.lote_id !== lotId || !record(value.data)) return null;
+  if (value.event_type === 'PUJA_ACEPTADA') {
+    const bid = publicBid(value.data);
+    return bid ? { kind: 'bid', data: bid } : null;
+  }
+  if (nonempty(value.data.codigo_lote) &&
+    ((value.event_type === 'SUBASTA_ADJUDICADA' && value.data.estado === 'ADJUDICADO' && finite(value.data.monto_adjudicado)) ||
+      (value.event_type === 'SUBASTA_DESIERTA' && value.data.estado === 'DESIERTO'))) return { kind: 'refresh' };
+  return null;
+}

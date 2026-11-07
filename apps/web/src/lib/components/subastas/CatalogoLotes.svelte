@@ -67,4 +67,24 @@
     </div>
   </div>
   <p class="text-sm text-slate-400">La puja es por el <strong>precio total del lote</strong>; no se liquida por kilo. El peso estimado por IA es orientativo y no vinculante.</p>
-  {#if error}<p rol
+  {#if error}<p role="alert" class="rounded-lg border border-rose-600 p-3 text-rose-300">{error} <button type="button" class="underline" onclick={() => void cargar(true)}>Reintentar</button></p>{/if}
+  {#if !cargando && !error && lotes.length === 0}<p role="status" class="text-slate-400">{vista === 'mios' ? 'Tu organización todavía no publicó lotes.' : 'No hay lotes activos en este momento.'}</p>{/if}
+  <ul class="grid sm:grid-cols-2 gap-4">
+    {#each lotes as lote (lote.id)}
+      <li class="rounded-xl border border-slate-700 bg-slate-950 p-4 space-y-2">
+        <div class="flex justify-between gap-2"><a class="font-bold text-emerald-300 underline break-all" href={`/subastas/${encodeURIComponent(lote.id)}`}>{lote.codigo_lote}</a><span class="text-xs rounded px-2 py-0.5 border border-slate-600">{lote.estado}{lote.es_abierta ? ' · abierto' : ''}</span></div>
+        <p class="text-sm text-slate-300">{[lote.cantidad_animales ? `${lote.cantidad_animales} animales` : null, lote.categoria, lote.raza].filter(Boolean).join(' · ') || 'Sin detalle del lote'}</p>
+        {#if lote.descripcion}<p class="text-sm text-slate-400">{lote.descripcion}</p>{/if}
+        <dl class="grid grid-cols-2 gap-2 text-sm">
+          <div><dt class="text-slate-500">Precio actual (lote)</dt><dd class="font-semibold">{fmt(lote.precio_actual)}</dd></div>
+          <div><dt class="text-slate-500">Pujas</dt><dd>{lote.total_pujas}</dd></div>
+          <div><dt class="text-slate-500">Cierre</dt><dd>{fecha(lote.fecha_cierre)}</dd></div>
+          {#if lote.peso_estimado_total_kg !== null}<div><dt class="text-slate-500">Peso estimado (IA, orientativo)</dt><dd>{Math.round(lote.peso_estimado_total_kg)} kg</dd></div>{/if}
+          {#if lote.origen}<div class="col-span-2"><dt class="text-slate-500">Origen</dt><dd>Ubigeo {lote.origen.ubigeo}{lote.origen.ubicacion_aproximada ? ' · ubicación aproximada' : ''}</dd></div>{/if}
+        </dl>
+      </li>
+    {/each}
+  </ul>
+  {#if cargando}<p role="status" class="text-slate-400">Consultando lotes…</p>{/if}
+  {#if cursor && !cargando}<button type="button" class="rounded-lg border border-slate-600 px-4 py-2" onclick={() => void cargar(false)}>Ver más lotes</button>{/if}
+</section>

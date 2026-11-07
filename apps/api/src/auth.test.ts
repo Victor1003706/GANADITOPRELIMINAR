@@ -116,4 +116,238 @@ describe('Autenticación, JWT y Contexto Organizacional Dual (RBAC)', () => {
     // 4.1 Crear una segunda organización (ej. Camal / Comprador) y vincular al usuario como COMPRADOR
     const dynamicRuc = '20' + Math.floor(100000000 + Math.random() * 900000000).toString();
     const orgRes = await pool.query<{ id: string }>(
-      `
+      `INSERT INTO organizaciones (razon_social, ruc, estado)
+       VALUES ($1, $2, 'ACTIVA')
+       RETURNING id`,
+      [`Frigorífico Industrial Lima SAC ${Date.now()}`, dynamicRuc]
+    );
+    orgCompradorId = orgRes.rows[0]!.id;
+
+    await authService.addMembership(userId, orgCompradorId, 'COMPRADOR', false);
+
+    // 4.2 Conmutar contexto activo a COMPRADOR
+    const switchRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/organizations/switch-context',
+      headers: {
+        authorization: `Bearer ${tokenVendedor}`
+      },
+      payload: {
+        organizacion_id: orgCompradorId,
+        rol: 'COMPRADOR'
+      }
+    });
+
+    assert.strictEqual(switchRes.statusCode, 200, `Error al conmutar: ${switchRes.body}`);
+    const switchBody = switchRes.json();
+    assert.ok(switchBody.access_token);
+    assert.strictEqual(switchBody.active_context.organizacion_id, orgCompradorId);
+    assert.strictEqual(switchBody.active_context.rol, 'COMPRADOR');
+
+    // 4.3 Comprobar en PostgreSQL que EXACTAMENTE una fila tiene is_active_context = TRUE
+    const activeCountRes = await pool.query<{ count: string }>(
+      `SELECT COUNT(*)::text as count
+       FROM user_organizaciones_roles
+       WHERE user_id = $1 AND is_active_context = TRUE`,
+      [userId]
+    );
+    assert.strictEqual(activeCountRes.rows[0]!.count, '1', 'Debe haber exactamente un contexto activo en PostgreSQL');
+
+    // Comprobar que la activa es Frigorífico Lima como COMPRADOR
+    const currentActiveRes = await pool.query<{ organizacion_id: string; rol: string }>(
+      `SELECT organizacion_id, rol
+       FROM user_organizaciones_roles
+       WHERE user_id = $1 AND is_active_context = TRUE`,
+      [userId]
+    );
+    assert.strictEqual(currentActiveRes.rows[0]!.organizacion_id, orgCompradorId);
+    assert.strictEqual(currentActiveRes.rows[0]!.rol, 'COMPRADOR');
+
+    // 4.4 Conmutar de vuelta a VENDEDOR
+    const switchBackRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/organizations/switch-context',
+      headers: {
+        authorization: `Bearer ${switchBody.access_token}`
+      },
+      payload: {
+        organizacion_id: orgVendedorId,
+        rol: 'VENDEDOR'
+      }
+    });
+
+    assert.strictEqual(switchBackRes.statusCode, 200);
+    assert.strictEqual(switchBackRes.json().active_context.rol, 'VENDEDOR');
+
+    // Validar de nuevo unicidad de contexto activo
+    const recheckActiveRes = await pool.query<{ count: string }>(
+      `SELECT COUNT(*)::text as count
+       FROM user_organizaciones_roles
+       WHERE user_id = $1 AND is_active_context = TRUE`,
+      [userId]
+    );
+    assert.strictEqual(recheckActiveRes.rows[0]!.count, '1');
+  });
+
+  test('5. Rechazo HTTP 401/403 en endpoints protegidos', async () => {
+    // 5.1 Sin token -> 401 Unauthorized
+    const noTokenRes = await app.inject({
+      method: 'GET',
+      url: '/api/v1/auth/me'
+    });
+    assert.strictEqual(noTokenRes.statusCode, 401);
+
+    // 5.2 Token inválido o malformado -> 401 Unauthorized
+    const invalidTokenRes = await app.inject({
+      method: 'GET',
+      url: '/api/v1/auth/me',
+      headers: {
+        authorization: 'Bearer token_completamente_invalido_xyz'
+      }
+    });
+    assert.strictEqual(invalidTokenRes.statusCode, 401);
+
+    // 5.3 Intentar conmutar a una organización no vinculada -> 403 Forbidden
+    const unlinkedOrgRes = await pool.query<{ id: string }>(
+      `INSERT INTO organizaciones (razon_social, estado)
+       VALUES ('Organización Ajena S.A.', 'ACTIVA')
+       RETURNING id`
+    );
+    const ajenaOrgId = unlinkedOrgRes.rows[0]!.id;
+
+    // Obtener token fresco
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: {
+        email: testUser.email,
+        password: testUser.password
+      }
+    });
+    const freshToken = loginRes.json().access_token;
+
+    const forbiddenRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/organizations/switch-context',
+      headers: {
+        authorization: `Bearer ${freshToken}`
+      },
+      payload: {
+        organizacion_id: ajenaOrgId,
+        rol: 'ADMIN'
+      }
+    });
+    assert.strictEqual(forbiddenRes.statusCode, 403);
+    assert.match(forbiddenRes.json().message, /no posee el rol o membresía/i);
+  });
+
+  test('6. Consulta de perfil y membresías (GET /api/v1/auth/me)', async () => {
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: {
+        email: testUser.email,
+        password: testUser.password
+      }
+    });
+    const token = loginRes.json().access_token;
+
+    const meRes = await app.inject({
+      method: 'GET',
+      url: '/api/v1/auth/me',
+      headers: {
+        authorization: `Bearer ${token}`
+      }
+    });
+
+    assert.strictEqual(meRes.statusCode, 200);
+    const body = meRes.json();
+    assert.strictEqual(body.user.email, testUser.email.toLowerCase());
+    assert.ok(body.activeContext);
+    assert.strictEqual(body.memberships.length, 2, 'El usuario debe registrar 2 membresías activables');
+  });
+
+  test('7. Blindaje de autoregistro: sólo se admiten roles comerciales COMPRADOR y VENDEDOR', async () => {
+    // 7.1 Intento de autoregistro con rol ADMIN -> 400 Bad Request
+    const adminRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: `fake_admin_${Date.now()}@test.com`,
+        password: 'PasswordSegura2026!',
+        nombre: 'Intento Admin',
+        rol_inicial: 'ADMIN'
+      }
+    });
+    assert.strictEqual(adminRes.statusCode, 400);
+    const adminBody = adminRes.json();
+    assert.strictEqual(adminBody.error, 'AuthError');
+    assert.match(adminBody.message, /Rol no permitido para autoregistro/i);
+
+    // 7.2 Intento de autoregistro con rol AUDITOR -> 400 Bad Request
+    const auditorRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: `fake_auditor_${Date.now()}@test.com`,
+        password: 'PasswordSegura2026!',
+        nombre: 'Intento Auditor',
+        rol_inicial: 'AUDITOR'
+      }
+    });
+    assert.strictEqual(auditorRes.statusCode, 400);
+    const auditorBody = auditorRes.json();
+    assert.strictEqual(auditorBody.error, 'AuthError');
+    assert.match(auditorBody.message, /Rol no permitido para autoregistro/i);
+
+    // 7.3 Intento de autoregistro con rol inválido o arbitrario -> 400 Bad Request
+    const invalidRoleRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: `fake_superuser_${Date.now()}@test.com`,
+        password: 'PasswordSegura2026!',
+        nombre: 'Intento Superuser',
+        rol_inicial: 'SUPERUSER'
+      }
+    });
+    assert.strictEqual(invalidRoleRes.statusCode, 400);
+    const invalidRoleBody = invalidRoleRes.json();
+    assert.strictEqual(invalidRoleBody.error, 'AuthError');
+    assert.match(invalidRoleBody.message, /Rol no permitido para autoregistro/i);
+
+    // 7.4 Registro válido explícito como COMPRADOR -> 201 Created
+    const buyerEmail = `comprador_valido_${Date.now()}@test.com`;
+    const buyerRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: buyerEmail,
+        password: 'PasswordSegura2026!',
+        nombre: 'Comprador Valido',
+        rol_inicial: 'COMPRADOR'
+      }
+    });
+    assert.strictEqual(buyerRes.statusCode, 201);
+    const buyerBody = buyerRes.json();
+    assert.strictEqual(buyerBody.active_context.rol, 'COMPRADOR');
+    assert.strictEqual(buyerBody.user.email, buyerEmail);
+
+    // 7.5 Registro válido explícito como VENDEDOR -> 201 Created
+    const sellerEmail = `vendedor_valido_${Date.now()}@test.com`;
+    const sellerRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: sellerEmail,
+        password: 'PasswordSegura2026!',
+        nombre: 'Vendedor Valido',
+        rol_inicial: 'VENDEDOR'
+      }
+    });
+    assert.strictEqual(sellerRes.statusCode, 201);
+    const sellerBody = sellerRes.json();
+    assert.strictEqual(sellerBody.active_context.rol, 'VENDEDOR');
+    assert.strictEqual(sellerBody.user.email, sellerEmail);
+  });
+});

@@ -145,4 +145,29 @@ export function calcularLiquidacionSubasta(
 }
 
 /**
- * Cal
+ * Calcula la liquidación neta a pagar al vendedor (monto adjudicado menos la comisión de plataforma del 1%).
+ * Retorno en Soles (PEN) con redondeo bancario estricto a 2 decimales (exacto 99%).
+ */
+export function calcularLiquidacionVendedor(
+  montoAdjudicado: number,
+  tasaComision: number = COMISION_PLATAFORMA_PORCENTAJE
+): {
+  montoBruto: number;
+  comisionRetenida: number;
+  montoNetoPagar: number;
+} {
+  if (typeof montoAdjudicado !== 'number' || isNaN(montoAdjudicado) || montoAdjudicado <= 0) {
+    throw new Error('El monto adjudicado debe ser un número positivo.');
+  }
+
+  const montoC = aCentimosPen(montoAdjudicado);
+  const comisionC = comisionCentimos(montoC, tasaComision);
+  const comisionRetenida = comisionC / 100;
+  const montoNetoPagar = (montoC - comisionC) / 100;
+
+  return {
+    montoBruto: montoAdjudicado,
+    comisionRetenida,
+    montoNetoPagar
+  };
+}

@@ -101,4 +101,36 @@ export const ordenesRoutes: FastifyPluginAsync<OrdenesRoutesOptions> = async (fa
    * liberando los fondos en custodia y generando la liquidación neta al vendedor.
    */
   fastify.post<{ Params: { id: string }; Body: ConfirmarRecepcionInput }>(
-    '/:id/confirmar-recepc
+    '/:id/confirmar-recepcion',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const session = request.userSession!;
+      const { id } = request.params;
+
+      try {
+        const resultado = await ordenesEntregaService.confirmarRecepcion(
+          session.userId,
+          session.activeOrganizationId,
+          id,
+          request.body
+        );
+
+        return reply.status(200).send(resultado);
+      } catch (err: any) {
+        if (err instanceof EntregaError) {
+          return reply.status(err.statusCode).send({
+            statusCode: err.statusCode,
+            error: err.name,
+            message: err.message
+          });
+        }
+        request.log.error(err);
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Error al confirmar la recepción de la orden de compra.'
+        });
+      }
+    }
+  );
+};

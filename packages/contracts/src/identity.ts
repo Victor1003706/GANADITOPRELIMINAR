@@ -142,4 +142,21 @@ export interface ContextoOrganizacionActivo {
 export interface Establecimiento {
   id: string;
   organizacion_id: string;
-  codigo_establecimiento?: stri
+  codigo_establecimiento?: string;
+  nombre: string;
+  tipo: TipoEstablecimiento;
+  ubigeo: UbigeoPerunano;
+  direccion: string;
+  referencia?: string;
+  /**
+   * Coordenadas geográficas estándar Point GeoJSON para indexación PostGIS GIST.
+   */
+  coordenadas: PointGeoJSON;
+  /**
+   * Registro o autorización sanitaria emitida por SENASA (si aplica).
+   */
+  autorizacion_sanitaria_senasa?: string;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}

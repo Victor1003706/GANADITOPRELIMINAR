@@ -70,4 +70,6 @@ ganadito/
 
 ## 5. Registro de Decisiones de Arquitectura (ADR)
 
-Toda decisión arquitectónica material (elección de base de datos, bibliotecas
+Toda decisión arquitectónica material (elección de base de datos, bibliotecas críticas, protocolos de comunicación) debe documentarse en `docs/decisions/` siguiendo el formato estandarizado.
+
+- [ADR 0001: Adopción de Monolito Modular con SvelteKit, Fastify y PostgreSQL](./decisions/0001-monorepo-modular-y-arquitectura-base.md)
