@@ -30,7 +30,8 @@
     "svelte": "^5.57.3",
     "svelte-check": "^4.7.7",
     "tailwindcss": "^4.3.3",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "@sveltejs/adapter-static": "4.0.1"
   },
   "imports": {
     "#lib/*": "./src/lib/*"

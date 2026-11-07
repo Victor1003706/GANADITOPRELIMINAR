@@ -11,8 +11,7 @@
     "build": "tsc",
     "seed": "tsx src/seed/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test --test-concurrency=1 \"src/**/*.test.ts\"",
-    "migrate": "tsx src/migrate.ts"
+    "test": "tsx --test --test-concurrency=1 \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@fastify/jwt": "^10.2.6",

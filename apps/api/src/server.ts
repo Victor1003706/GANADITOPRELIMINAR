@@ -106,27 +106,4 @@ if (isDirectRun) {
   const SHUTDOWN_TIMEOUT_MS = 10_000;
 
   startServer()
-    .then((handle) => {
-      const onSignal = (signal: NodeJS.Signals) => {
-        const timer = setTimeout(() => {
-          console.error('[server] Apagado excedió el tiempo límite; forzando salida.');
-          process.exit(1);
-        }, SHUTDOWN_TIMEOUT_MS);
-        timer.unref();
-        handle.shutdown(signal).then(
-          () => process.exit(0),
-          (err) => {
-            console.error('[server] Error durante el apagado:', err);
-            process.exit(1);
-          }
-        );
-      };
-      process.once('SIGINT', onSignal);
-      process.once('SIGTERM', onSignal);
-    })
-    .catch(async (err) => {
-      console.error('[server] No se pudo iniciar la API:', err instanceof Error ? err.message : err);
-      await Promise.allSettled([closeRedis(), closePool()]);
-      process.exit(1);
-    });
-}
+    .then((handle) =

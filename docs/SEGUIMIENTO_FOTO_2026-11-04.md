@@ -31,18 +31,4 @@ La prueba histórica publicaba un lote UI y preparaba otro mediante API para cer
 
 La recarga del navegador debe recuperar sesión, precio y secuencia oficiales. Después de comprobar la orden correcta para su comprador, otra organización ingresa desde la UI y obtiene un 404 opaco sin importes ni detalle; se mantiene la equivalencia API con una orden inexistente. Esto acredita el aislamiento de esa consulta, no la privacidad total de V05.
 
-Validación local: un test detectado, TypeScript focal correcto, 30/30 guardias de destino y 5/5 unitarios web; revisión independiente sin bloqueantes. La ejecución real se reserva exclusivamente a PostGIS/Redis efímeros de CI. El SHA y resultado final se enlazan en [#37](https://github.com/Nicolas923-source/Ganadito/pull/37).
-
-## Tres propuestas de la foto
-
-Después de verificar esta unidad se documentaron las [tres recomendaciones](DECISIONES_PENDIENTES_FOTO_2026-11-04.md). Siguen siendo decisiones por acordar con Víctor/Nicolás, no contratos ya aprobados ni autorización para habilitar WS o pasaporte público.
-
-## Cambios recibidos durante la ejecución
-
-El estado anterior describe la consulta inicial. Nicolás publicó luego N04 `2d943fd` y N05 `e657d77`, que ya propagan N03 `18b30bac`. Se revisaron sus deltas completos: el reloj posterior al bloqueo y el inicio futuro, la redacción de credenciales en logs y las coordenadas Spot tienen corrección y regresiones. La [CI 41931985620](https://github.com/Nicolas923-source/Ganadito/actions/runs/41931985620) de la cabeza web `3a349f3` usó el merge de prueba `ca56977` con N05 `e657d77`: 113/113 backend, 5/5 web, 36/36 configuración, 2/2 proxy, 58/58 fixtures, 2/2 HTTP y 1/1 real (2.5 minutos), todos correctos. No se atribuye esa ejecución al antiguo árbol N05 ni se presenta como CI individual de cada SHA de Nicolás.
-
-Se incorporó N05 original en la rama de integración, sin editar sus fuentes ni fusionar PR. Los árboles reservados siguen idénticos al nuevo N05; el SHA final y su nueva CI se registran en #37. Continúan pendientes #26 (seed), #30 (preflight), #33 (cursor) y #34 (metadata pública y DTO), además de los tres acuerdos propuestos. No se aprobaron dependencias bloqueadas ni entregas propias.
-
-Revisión focal de V05: la web acepta el nuevo campo de aproximación de Spot, pero aún no lo representa ni avisa visualmente en el marcador/popup. No se recuperan coordenadas exactas desde la web. La adaptación de presentación queda registrada como trabajo de Víctor dependiente del contrato/DTO de privacidad acordado, según la instrucción expresa; no se cambia ese contrato por inferencia ni se da V05 por terminado.
-
-Detalle P3 para Nicolás: el nuevo test Spot combina coordenadas aleatorias con una aserción de que aproximar siempre cambia el valor. Un punto real que ya está en rejilla puede conservarlo correctamente y fallar esa aserción; usar un fixture fijo fuera de rejilla. No invalida la política SQL corregida.
+Validación local: un test detectado, TypeScript focal correcto, 30/30 guardias de destino y 5/5 unitarios web; revisión indep

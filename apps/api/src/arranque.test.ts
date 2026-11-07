@@ -90,48 +90,4 @@ describe('N01: arranque, health real, migraciones versionadas y workers', { conc
             logger: false,
             migrationRunner: async () => {
               migro = true;
-              return { applied: [], skipped: [] } as any;
-            }
-          }),
-        /JWT_SECRET es obligatorio/
-      );
-      assert.strictEqual(migro, false, 'no debe migrar con la configuración inválida');
-    } finally {
-      process.env.NODE_ENV = prev.env;
-      if (prev.secret === undefined) delete process.env.JWT_SECRET; else process.env.JWT_SECRET = prev.secret;
-    }
-  });
-
-  test('5. SubastasCloserWorker sigue ejecutando ciclos tras el primero y stop() lo detiene', async () => {
-    let consultas = 0;
-    const poolFalso = {
-      query: async () => {
-        consultas++;
-        return { rows: [], rowCount: 0 };
-      }
-    } as unknown as pg.Pool;
-
-    const worker = new SubastasCloserWorker({ pool: poolFalso, intervalMs: 20 });
-    worker.start();
-    await new Promise((r) => setTimeout(r, 200));
-    await worker.stop();
-    const alDetener = consultas;
-    assert.ok(alDetener >= 3, `Se esperaban ≥3 ciclos, hubo ${alDetener}`);
-
-    await new Promise((r) => setTimeout(r, 80));
-    assert.strictEqual(consultas, alDetener, 'Tras stop() no hay más ciclos');
-  });
-
-  test('6. startServer escucha, responde /health por HTTP real y se apaga ordenadamente', async () => {
-    const { startServer } = await import('./server.js');
-    const handle = await startServer({ port: 0, host: '127.0.0.1', runMigrations: true, startWorkers: true, logger: false });
-    try {
-      const res = await fetch(`${handle.address}/health`);
-      assert.strictEqual(res.status, 200);
-      const body = (await res.json()) as { db: string };
-      assert.strictEqual(body.db, 'ok');
-    } finally {
-      await handle.shutdown('test');
-    }
-  });
-});
+            

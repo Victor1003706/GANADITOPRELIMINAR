@@ -48,6 +48,4 @@ Ruta pública, usada por el QR. El token es opcional.
 ## `GET /cotizaciones/pizarra` (Spot)
 Ruta pública. El token es opcional, pero si se envía uno inválido la respuesta es `401`. Para publicar una cotización ya se exige que el establecimiento pertenezca a la organización activa.
 
-- `latitud` y `longitud` siguen **la misma política que `/establecimientos/cercanos`** (tabla de arriba): un `ESTABLO` ajeno se entrega aproximado en la rejilla de 0.01° para anónimos y otras organizaciones.
-- Campo nuevo `ubicacion_aproximada: boolean`, con el mismo significado que en el mapa.
-- La regla vive en un solo lugar (`apps/api/src/mapa/ubicacion-publica.ts`). Cualquier lectura pública nueva de establecimientos debe usarla.
+- `latitud` y `longitud` siguen **la misma política que `/establecimientos/cercanos`** (tabla de arriba): un `ESTAB

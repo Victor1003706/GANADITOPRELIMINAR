@@ -25,16 +25,4 @@ Revisiones nuevas: [#43](https://github.com/Nicolas923-source/Ganadito/pull/43#p
 
 ## Trabajo propio y transferencia
 
-La [transferencia autorizada](TRANSFERENCIA_ARRANQUE_CURSOR_2026-11-04.md) se limita a arranque/configuración/cursor y sus pruebas. Al aparecer #43 se adoptaron las correcciones originales de Nicolás y se conservaron nuestros cambios previos únicamente en el commit LOCAL 7663f13, sin publicarlos como duplicados.
-
-El diff de producción propio final solo valida el calendario del cursor antes de SQL, preservando bytes originales y microsegundos. Se añaden pruebas de preflight real con seis configuraciones inválidas y cero infraestructura; dos casos reales PostgreSQL de precisión/desempate, transaccionales con rollback y guardia previa; y pruebas de fechas inválidas/legadas/bisiestas. Diez pruebas puras y typecheck API correctos. La prueba de calendario falló primero con el código anterior y pasó con el arreglo. Revisión técnica independiente sin bloqueantes; no sustituye la revisión de Nicolás ni es Approve.
-
-CI final, SHA y PR se registran en la descripción de la entrega. La reproducción pura del cursor no demuestra la ejecución SQL: se exige la regresión PostgreSQL de CI. No se usó Neon ni PostgreSQL local existente.
-
-## Evidencia de Víctor y porcentaje
-
-La CI 41957924575 verificó #37 7b7146b con main 9bfc5e4 en cuatro jobs (117 API). La CI nueva [41966208665](https://github.com/Nicolas923-source/Ganadito/actions/runs/41966208665) pasó también cuatro jobs sobre HEAD 03722fc y merge probado f31c79f con main 526a22d: 142 API, 5 web, 36 configuración, 2 proxy, 58 fixtures, 2 HTTP, 1 recorrido real del mismo lote UI hasta orden (3.1 minutos) y 45 Python. Este PR de calendario/regresiones exige su propia CI final. El job Python se añadió en rutas de Víctor; no habilita el servicio ni valida precisión ganadera/sanitaria.
-
-Solo el índice explícito de evidencia V01-V06 tiene denominador: V01/V02/V03/V04/V06 3/4 y V05 2/4; **17/24 hitos, 70.8% (71% redondeado), siete casillas pendientes y 0/6 bloques aceptados**. Las siete casillas son integración real V05 y seis aceptaciones cruzadas. El 29% de casillas restante no equivale a esfuerzo, horas ni avance global. Se separan implementación, pruebas y aceptación; mejorar pruebas existentes no inventa nuevas casillas.
-
-Para cerrar el flujo inicial faltan privacidad/DTO, adaptación visual de aproximación V05 y su prueba real, revisión cruzada de Nicolás, cierre de WS/contexto acordado y staging ficticio autorizado con recuperación y aceptación conjunta. Este arreglo propio también requiere su revisión final. N06/proveedor real, IA, mayoristas, GMX y logística son etapas posteriores; no hay denominador global o fecha final aprobados. Pagos reales, transporte WS web y ruta pública web de pasaporte siguen apagados; los endpoints API continúan registrados.
+La [transferencia autorizada](TRANSFERENCIA_ARRANQUE_CURSOR_2026-11-04.md) se limita a arranque/configuración/cursor y sus prue

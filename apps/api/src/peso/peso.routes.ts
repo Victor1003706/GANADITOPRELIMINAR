@@ -96,41 +96,4 @@ export const pesoRoutes: FastifyPluginAsync<PesoRoutesOptions> = async (fastify,
 
   /**
    * POST /api/v1/estimaciones-peso/:id/pesaje
-   * Peso real de balanza para la muestra del piloto. Solo personal interno: el vendedor
-   * no registra pesajes de su propio ganado (evita sesgar la calibración).
-   */
-  fastify.post<{ Params: { id: string }; Body: unknown }>(
-    '/estimaciones-peso/:id/pesaje',
-    { onRequest: [authenticate, requireRole('ADMIN', 'OPERADOR', 'AUDITOR')] },
-    async (request, reply) => {
-      if (!exigirUuid(request.params.id, reply)) return reply;
-      try {
-        const pesaje = await servicio.registrarPesaje(
-          request.params.id,
-          request.userSession!.activeOrganizationId!,
-          request.userSession!.userId,
-          request.body
-        );
-        return reply.status(201).send(pesaje);
-      } catch (err) {
-        return responderError(reply, err, request.log);
-      }
-    }
-  );
-
-  /**
-   * GET /api/v1/estimaciones-peso/evaluacion
-   * Error del modelo contra balanza y propuesta de calibración (no se aplica sola).
-   */
-  fastify.get(
-    '/estimaciones-peso/evaluacion',
-    { onRequest: [authenticate, requireRole('ADMIN', 'AUDITOR')] },
-    async (request, reply) => {
-      try {
-        return reply.status(200).send(await servicio.evaluar());
-      } catch (err) {
-        return responderError(reply, err, request.log);
-      }
-    }
-  );
-};
+   * Peso real de balanza para la

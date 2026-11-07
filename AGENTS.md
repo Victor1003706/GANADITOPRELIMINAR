@@ -44,4 +44,4 @@ No editar rutas del compañero para desbloquear una pantalla. Registrar la solic
 
 Los datos simulados se aíslan en pruebas o modo de demostración explícito. Nunca reemplazar una respuesta fallida de API con datos demo ni confirmar pagos, permisos o resultados de subasta en el navegador. Pagos reales y servicios externos no habilitados permanecen desactivados.
 
-La cola y los criterios V01-V06 están en [docs/VICTOR_DELIVERY.md](docs/VICTOR_DELIVERY.md); las brechas de la base revisada, en [docs/CONTRACT_REVIEW.md](docs/CONTRACT_REVIEW.md). No declarar entrega al 100% solo por compilar o pasar fixtures: se necesitan CI del código final, revisión cruzada y prueba web + API real cuando la entrega conecta ambas. Cada autor corrige sus cambios y nadie aprueba su propia entrega.
+La cola y los criterios V01-V06 están en [docs/VICTOR_DELIVERY.md](docs/VICTOR_DELIVERY.md); las brechas de la base revisada, en [docs/CONTRACT_REVIEW.md](docs/CONTRACT_REVIEW.md). No declarar entrega al 100% solo por compilar o pasar fixtures: se necesitan CI del código final, revisión cruzada y

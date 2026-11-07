@@ -31,24 +31,4 @@ Implementar una pantalla o pasar pruebas aisladas no cierra por sí solo una fil
 | 8 | N05 y V05 | Lecturas autorizadas y pantallas, en PR separados. | Privacidad y recorrido integrado comprobados. |
 | 9 | V06 / Víctor | Pruebas navegador, CI, staging y recuperación. | Sin bloqueantes, revisión del código final y pagos externos desactivados. |
 
-Una entrega web aislada puede revisarse antes si no rompe el modo operativo; las dependencias y contratos pendientes quedan explícitos. La cola describe el orden requerido y no afirma que estos PR ya existan ni que estén aprobados. Una rama de trabajo agregada debe dividirse en estas entregas antes de integrar.
-
-Actualización del 4 de noviembre de 2026: #29 contractual está integrado por autorización expresa; #35 y #36 de Víctor permanecen en borrador. La rama `feature/victor/v04-v06-integracion-nicolas` adapta la web al backend N01–N05 y prepara una prueba real efímera de CI, sin fusionar PR de código. Estado y evidencia en [VALIDATION_VICTOR.md](VALIDATION_VICTOR.md); bloqueos de Nicolás en [REVIEW_NICOLAS_2026-11-04.md](REVIEW_NICOLAS_2026-11-04.md).
-
-## Qué prueba cada nivel
-
-- **Typecheck/build/lint:** coherencia estática y compilación de la versión probada. Un script sin reglas de lint no acredita estilo de todos los paquetes.
-- **Tests backend:** lógica, persistencia y permisos cubiertos por esas pruebas sobre PostgreSQL/Redis aislados de CI.
-- **E2E con respuestas controladas:** comportamiento del navegador, peticiones, errores, expiración y recuperación de la interfaz. Los fixtures se identifican en tests y reporte; no certifican concurrencia, aislamiento de organizaciones, cierre ni persistencia de la API real.
-- **Recorrido integrado en staging:** web + API + PostgreSQL/Redis/worker reales con datos ficticios y contrato revisado. Este nivel sigue pendiente mientras falten N01, las lecturas de órdenes o cualquier contrato requerido.
-
-## Cierre de una tarea
-
-- [ ] Un editor y rutas coinciden con [OWNERSHIP.md](OWNERSHIP.md); excepciones o reservas documentadas.
-- [ ] Contrato, dependencias y SHA de prueba identificados; sin hallazgos bloqueantes.
-- [ ] Checks correspondientes pasan con evidencia adjunta, incluyendo CI del código final.
-- [ ] Nicolás revisó el PR final de Víctor; cada autor corrigió su propia entrega.
-- [ ] Pantalla y API real se probaron juntas cuando la entrega conecta ambas.
-- [ ] Cambios de entorno o esquema tienen procedimiento y responsable; producción sigue separada.
-
-La revisión de un asistente ayuda a encontrar fallos, pero no sustituye la revisión cruzada del otro programador exigida por el plan.
+Una entrega web aislada puede revisarse antes si no rompe el modo operativo; las dependencias y contratos pendientes quedan expl�

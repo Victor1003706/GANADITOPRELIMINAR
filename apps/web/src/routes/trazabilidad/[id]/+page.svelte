@@ -93,18 +93,4 @@
   });
 </script>
 
-<svelte:head><title>Pasaporte bovino | Ganadito</title></svelte:head>
-<div class="max-w-6xl mx-auto w-full px-4 py-8 space-y-6">
-  <div class="flex flex-wrap justify-between items-start gap-4"><div><a class="text-sm text-emerald-400 hover:underline" href="/trazabilidad">Buscar otro bovino</a><h1 class="text-3xl font-bold text-white mt-2">Pasaporte bovino</h1><p class="text-sm text-slate-400 mt-2 break-all">Identificador solicitado: {identificador}</p></div><button type="button" class="rounded-xl border border-slate-700 px-4 py-2 text-slate-200 disabled:opacity-50" disabled={cargando || $session.status === 'checking'} onclick={() => void cargar(identificador)}>Actualizar pasaporte</button></div>
-  {#if sesionPendiente($session.status)}<p role="status" class="text-slate-400">Comprobando sesión…</p>
-  {:else if cargando}<p role="status" class="rounded-xl bg-slate-900 p-6 text-slate-400">Consultando pasaporte…</p>
-  {:else if errorConsulta}<p role="alert" class="rounded-xl border border-rose-800 bg-rose-950/40 p-5 text-rose-200">{errorConsulta}</p>
-  {:else if pasaporte}
-    <VistaPasaporte {pasaporte} {verificacion} {auditando} {errorAuditoria} onVerificar={() => void auditar()} />
-    {#if pasaporte.vista === 'COMPLETA'}
-      <div class="rounded-xl border border-slate-800 bg-slate-900 p-5 text-sm text-slate-400"><button type="button" disabled class="rounded-lg bg-slate-800 px-4 py-2 opacity-60">Registrar evento no disponible</button><p class="mt-2">El registro de nuevos eventos desde la web todavía no está habilitado.</p></div>
-    {:else if $session.status !== 'authenticated'}
-      <p class="text-sm text-slate-400">¿Eres la organización dueña? <a href="/acceso" class="text-emerald-400 underline">Inicia sesión</a> para ver la vista completa.</p>
-    {/if}
-  {:else}<p role="status" class="text-slate-400">No hay un pasaporte disponible para esta consulta.</p>{/if}
-</div>
+<svelte:head><title>Pasaporte bo

@@ -107,13 +107,4 @@ When encountering a bug:
 1. Load skill: skills/debugging/systematic-debugging
 2. Read overview (10 sec) - reminded of mandate
 3. Follow Phase 1 checklist - forced investigation
-4. If tempted to skip - see anti-pattern, stop
-5. Complete all phases - root cause found
-
-**Time investment:** 5-10 minutes
-**Time saved:** Hours of symptom-whack-a-mole
-
----
-
-*Created: 2025-10-03*
-*Purpose: Reference example for skill extraction and bulletproofing*
+4. If temp

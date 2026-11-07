@@ -63,31 +63,4 @@ Ejecutar checks pertinentes con los servicios de prueba requeridos; registrar fa
 
 Nadie aprueba su entrega. No editar la rama del compañero mientras trabaja. La revisión automática o de un asistente no sustituye la revisión cruzada. Un e2e con fixtures no demuestra integración API real.
 
-Las guías iniciales entregadas por Víctor el 4 de noviembre de 2026 reservaban **Approve** a la persona revisora. Después, el propietario autorizó expresamente en este chat que Codex registre aprobaciones de cambios de Nicolás ya revisados y comprobados, para ahorrar tiempo. Esa decisión posterior tiene prioridad sobre la guía: se fija el SHA, se comprueban diff, pruebas y CI exacta y se conserva el alcance de la revisión. Un `COMMENT` favorable no cuenta como aprobación formal. No aprobar PR propios ni dependencias bloqueadas; una CI verde no acredita funcionamiento universal. Esta delegación no autoriza fusionar PR ni desplegar. No duplicar commits heredados por otra rama.
-
-## Integrar uno por uno
-
-Exigir CI aprobada del SHA final, conversaciones resueltas, revisión cruzada y evidencia web + API cuando corresponda. No hacer push directo a `main`. Las protecciones de GitHub deben comprobarse en el repositorio; este documento no las activa ni afirma que estén configuradas.
-
-Orden de la guía: **#27 → #25 → #28 → #26 → #30 → #31 → #32 → #33 → #34**; #35 → #36 se revisan en paralelo y #37 verifica la integración completa sobre N05. Cada paso depende de resolver sus hallazgos: la posición en la lista no autoriza fusionar un PR bloqueado. Usar **Create a merge commit** para conservar los commits compartidos y los PR apilados. La persona responsable comprueba la base real del PR siguiente después de cada fusión.
-
-Estado comprobado: ruleset `reglas-main` (`26218842`) activo, una aprobación y resolución de conversaciones. Su lista `required_status_checks` está vacía, por lo que la guía exige comprobar manualmente `Validar Monorepo` en verde; no asumir que GitHub impone ese nombre de check. `dismiss_stale_reviews_on_push=false`: si cambia el SHA, revisar el diff y repetir checks aunque GitHub conserve una aprobación anterior. El método merge es la política acordada; no se cambiaron ajustes ni permisos del repositorio.
-
-Los PR de Nicolás #30–#34 todavía usan el workflow de sus bases, filtrado hacia `main`; carecen de CI individual. La rama de Víctor ya quitó ese filtro y prueba el conjunto en #37. La evidencia integrada no reemplaza los checks del SHA que se vaya a fusionar. El [registro de revisión](REVIEW_NICOLAS_2026-11-04.md) distingue ambos niveles y fija los SHA revisados.
-
-Víctor coordina primero contratos/dependencias, después backend y por último conexión final web. Una web aislada puede integrarse antes si no rompe el modo operativo y declara sus dependencias. Tras cada fusión, el autor del siguiente PR incorpora la versión actual:
-
-```bash
-git fetch origin
-git merge origin/main
-```
-
-Repetir checks afectados y revisar el diff final. Resolver conflictos con ambos responsables; no seleccionar automáticamente un archivo completo para ganar el conflicto. Si una rama publicada requiere reescribir historia, coordinarlo primero; no usar force-push como solución rutinaria.
-
-## Secretos expuestos
-
-Revocar o rotar primero el secreto comprometido, coordinar el incidente con el propietario y comprobar el alcance. Borrar el archivo en otro commit no elimina el secreto del historial. Cualquier limpieza de historial, force-push o restauración de datos requiere coordinación y autorización explícita; no improvisar esos comandos desde una corrección web.
-
-## Cierre
-
-La tarea se cierra cuando coinciden autor/rutas, contrato y dependencias están identificados, pruebas y CI pasan, no hay bloqueantes y el compañero revisó el código final. Si conecta pantalla y API, probarlas juntas con datos ficticios. Registrar cambios de entorno/esquema y recuperación en [staging](../infrastructure/deployment/README.md). Pagos reales y servicios externos no habilitados permanecen desactivados.
+Las guías iniciales entregadas por Víctor el 4 de noviembre de 2026 reservaban **Approve** a la persona revisora. Después, el propietario autorizó expresamente en este chat que Codex registre aprobaciones de cambios de Nicolás y

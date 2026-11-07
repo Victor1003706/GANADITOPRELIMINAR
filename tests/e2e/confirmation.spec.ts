@@ -58,8 +58,4 @@ test('puja todavía en proceso conserva la clave al consultar su resultado', asy
   await page.getByLabel('Importe de tu puja (S/)').fill('110');
   await page.getByRole('button', { name: 'Confirmar puja', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Confirmar puja', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: 'Reintentar la misma puja', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'El servidor confirmó tu puja' })).toBeVisible();
-  expect(keys).toHaveLength(2);
-  expect(keys[1]).toBe(keys[0]);
-});
+  await

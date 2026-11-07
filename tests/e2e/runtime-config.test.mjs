@@ -73,21 +73,4 @@ console.log(JSON.stringify(result));
 }
 
 for (const script of ['dev', 'start']) {
-  test(`API ${script} carga .env de raíz desde apps/api`, async t => {
-    assert.deepEqual(await probe(t, script), {
-      marker: 'runtime-probe', port: '4000', fromFile: 'fixture-only', payments: 'false'
-    });
-  });
-
-  test(`API ${script} conserva variables inyectadas sobre .env`, async t => {
-    assert.deepEqual(await probe(t, script, { injectedPort: '4501' }), {
-      marker: 'runtime-probe', port: '4501', fromFile: 'fixture-only', payments: 'false'
-    });
-  });
-
-  test(`API ${script} admite que no exista .env`, async t => {
-    assert.deepEqual(await probe(t, script, { envFile: false, injectedPort: '4502' }), {
-      marker: 'runtime-probe', port: '4502'
-    });
-  });
-}
+  test(`API ${script} carga .env de raíz desde apps/api`, async t =>

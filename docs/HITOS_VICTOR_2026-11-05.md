@@ -25,21 +25,4 @@ El índice histórico pasa de 17/24 a **18/24 hitos con evidencia técnica (75%)
 
 ## Hallazgos de Nicolás contrastados con la nueva base
 
-Se revisaron los diffs completos de #46/#50 y sus CI exactas verdes ([41972443910](https://github.com/Nicolas923-source/Ganadito/actions/runs/41972443910), [41975488394](https://github.com/Nicolas923-source/Ganadito/actions/runs/41975488394)). Lookup seguro, rechazo de tipos nuevos inválidos y omisión pública de hashes están implementados; no se repiten como defectos abiertos.
-
-- [#46, revisión 5785013448](https://github.com/Nicolas923-source/Ganadito/pull/46#pullrequestreview-5785013448): el DTO cercano aún heredaba dirección obligatoria pese al null público real. Esta entrega corrige solo ese tipo bajo transferencia y añade regresión de compilación rojo→verde; el DTO privado de creación sigue exigiendo string. Nicolás revisará el arreglo.
-- [#50, revisión 5785012960](https://github.com/Nicolas923-source/Ganadito/pull/50#pullrequestreview-5785012960): los registros idempotentes anteriores a la migración 0014 conservan `organizacion_id=NULL` y el servicio devuelve su recibo sin comprobar la organización. Reproducción sin DB con el servicio real instrumentado: org A guardada/activa B → 409; registro heredado NULL → recibo original. Falta recuperar la organización original o fallar con conflicto opaco y probar los tres casos de legado. Pujas/SQL siguen siendo rutas de Nicolás, fuera de la transferencia V05. La prueba con cuentas nuevas no acredita una actualización de datos existentes.
-
-Este segundo bloqueo impide afirmar que el flujo comercial completo está libre de defectos, aunque los recorridos de nueva instalación pasen. El índice registra evidencia cubierta y no elimina hallazgos de compatibilidad. No se aprobó ninguno de esos dos PR completos ni el arreglo propio.
-
-La revisión de #47 también reconoció membresía Bearer, revocación respondida y limpieza corregidas; encontró un [P2 de consulta de autorización que queda pendiente, revisión 5785067356](https://github.com/Nicolas923-source/Ganadito/pull/47#pullrequestreview-5785067356). Sin deadline, el supervisor omite revalidaciones posteriores mientras el hub sigue entregando hasta vencer la credencial. Se reprodujo sin red con una promesa PostgreSQL pendiente. Debe corregirlo Nicolás en WS; la recuperación validada aquí sigue siendo HTTP y el transporte WS web permanece apagado. No se presenta su CI verde como prueba de este caso.
-
-En etapas posteriores, también se revisaron íntegros #48/#49 y sus CI exactas verdes, sin editar esas rutas. [#48, revisión 5785161553](https://github.com/Nicolas923-source/Ganadito/pull/48#pullrequestreview-5785161553): una respuesta válida de una vista más `vistas:{}` pasa validación y causa 500; con `vistas:[]` prepara una estimación sin las medidas. Diez casos puros, dos reproducciones del defecto, sin DB/red. [#49, revisión 5785161842](https://github.com/Nicolas923-source/Ganadito/pull/49#pullrequestreview-5785161842): la inversión sin centrar acepta un fold LOOCV no identificable; 39 animales L140/PT180/W400 y uno L140/PT180.1/W440 producen MAPE 0 y recomiendan el modelo libre pese a perder rango al retirar el último. Se reconoce que las correcciones anteriores de escala y validación sí existen; estos casos nuevos siguen a cargo de Nicolás, sin aprobar ni habilitar IA ni afirmar validación de campo.
-
-## Revisión que se solicita a Nicolás
-
-Revisar el diff final de Víctor y sus pruebas, incluido el pequeño arreglo del DTO de dirección pública bajo [transferencia V05](TRANSFERENCIA_V05_2026-11-04.md). Confirmar cada aceptación sobre el SHA revisado y corregir los hallazgos antes de marcar su A. Ni Codex ni su revisión independiente sustituyen esta aceptación. El hecho de que un PR esté integrado tampoco la demuestra.
-
-El modo probado conserva snapshots HTTP y pujas REST. Transporte WS web, ruta pública web de pasaporte, pagos reales e integraciones externas no habilitadas permanecen apagados. La API mantiene sus endpoints de WS/pasaporte. Habilitarlos requiere revisión y pruebas específicas. Staging compartido y producción no se desplegaron; no se usó Neon ni PostgreSQL local existente para pruebas reales.
-
-El alcance comercial posterior (IA en campo, proveedor de pagos, mayoristas, logística y otros módulos) no tiene un porcentaje global acordado en esta matriz. No se garantiza ausencia universal de errores ni se declara aceptación 24/24 antes de la revisión cruzada.
+Se revisaron los diffs completo
