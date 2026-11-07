@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
     tailwindcss(),
     sveltekit({
       adapter: cloudflareDemo
-        ? adapterStatic({ fallback: '200.html' })
+        ? adapterStatic({ fallback: 'index.html' })
         : adapter(),
       version: { name: process.env.GANADITO_RELEASE_SHA || 'development' }
     })
